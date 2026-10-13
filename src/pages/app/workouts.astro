@@ -1,0 +1,8 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Workouts from '../../app/Workouts';
+---
+
+<Layout title="Workouts — Protein & Lifts" description="Build workouts, link them to days of the week, and manage your exercise library with step and machine photos." noindex app>
+  <Workouts client:only="preact" />
+</Layout>

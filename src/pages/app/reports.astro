@@ -1,0 +1,8 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Reports from '../../app/Reports';
+---
+
+<Layout title="Reports — Protein & Lifts" description="Protein intake, training consistency, strength progress and body weight trends from your own logs." noindex app>
+  <Reports client:only="preact" />
+</Layout>

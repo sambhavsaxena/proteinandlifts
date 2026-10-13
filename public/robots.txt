@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://proteinandlifts.com/sitemap-index.xml

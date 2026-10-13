@@ -1,0 +1,47 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { SITE } from '../site';
+---
+
+<Layout title="Privacy Policy — Protein & Lifts" description="What Protein & Lifts stores about you, where it is kept, who can see it, and how to export or delete your account data at any time.">
+  <article class="prose-page">
+    <h1>Privacy Policy</h1>
+    <p>Last updated: 13 October 2026</p>
+    <p>This policy explains what {SITE.name} ("we", "the site") collects when you use {SITE.domain}, and what you can do about it.</p>
+
+    <h2>What we store</h2>
+    <ul>
+      <li><strong>Account details:</strong> your email address and a hashed password, used only to sign you in.</li>
+      <li><strong>Onboarding answers:</strong> your weight, height, target weight and whether you eat vegan, vegetarian, eggetarian or non-vegetarian. They pick your starting plan and protein target.</li>
+      <li><strong>Your plan and logs:</strong> the workouts, exercises, schedule, foods, diet plans, protein entries, sets, session notes and body weight entries you create.</li>
+      <li><strong>Photos you upload:</strong> exercise and machine photos you add. They are resized in your browser before upload and kept in private storage.</li>
+      <li><strong>On your device:</strong> your sign-in session, your theme choice and the diet variant you last picked are kept in your browser's local storage.</li>
+    </ul>
+
+    <h2>Where it is kept</h2>
+    <p>Data is stored with Supabase, our database and authentication provider. Each record is tied to your account, and access rules on the database prevent other users from reading or changing it.</p>
+
+    <h2>What we do not do</h2>
+    <ul>
+      <li>We do not sell your data or share it with advertisers.</li>
+      <li>We do not currently run advertising or third-party analytics on the site. If that changes, this policy will be updated first.</li>
+      <li>We do not use your logs for anything other than showing them back to you.</li>
+    </ul>
+
+    <h2>Your choices</h2>
+    <ul>
+      <li><strong>Export:</strong> download everything as JSON from Settings, or individual logs as CSV from Reports.</li>
+      <li><strong>Delete:</strong> "Delete all my data" in Settings removes your plan, logs and uploaded photos.</li>
+      <li><strong>Close your account:</strong> email us and we will remove the sign-in record as well.</li>
+    </ul>
+
+    <h2>Health information</h2>
+    <p>Body weight, food and training logs can be sensitive. Only enter what you are comfortable storing online. Nothing on the site is medical advice.</p>
+
+    <h2>Children</h2>
+    <p>The site is not intended for children under 16, and we do not knowingly collect their data.</p>
+
+    <h2>Contact</h2>
+    <p>Questions about this policy or your data: <a href={`mailto:${SITE.email}`}>{SITE.email}</a>.</p>
+  </article>
+</Layout>

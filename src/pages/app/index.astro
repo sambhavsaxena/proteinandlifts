@@ -1,0 +1,8 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Today from '../../app/Today';
+---
+
+<Layout title="Today — Protein & Lifts" description="Your workout and protein target for today, with one-tap logging for meals, sets and body weight." noindex app>
+  <Today client:only="preact" />
+</Layout>

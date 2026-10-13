@@ -1,0 +1,21 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { SITE } from '../site';
+---
+
+<Layout title="Contact — Protein & Lifts" description="Get in touch about Protein & Lifts: bug reports, feature ideas, questions about your data, or help with your account. Email goes to the developer.">
+  <article class="prose-page">
+    <h1>Contact</h1>
+    <p>{SITE.name} is run by one person, {SITE.creator}. Email is the fastest way to reach me.</p>
+    <p><a href={`mailto:${SITE.email}`} class="btn btn-primary btn-pill !text-inverse !no-underline">Email {SITE.email}</a></p>
+
+    <h2>Good reasons to write</h2>
+    <ul>
+      <li>Something is broken or a number looks wrong.</li>
+      <li>You want a feature, or an exercise or food added to the starter plan.</li>
+      <li>You want your account closed and your sign-in record removed.</li>
+      <li>You have a question about the <a href="/privacy/">privacy policy</a> or the <a href="/terms/">terms</a>.</li>
+    </ul>
+    <p>Please include the email address you signed up with and, for bugs, what you were doing when it happened.</p>
+  </article>
+</Layout>

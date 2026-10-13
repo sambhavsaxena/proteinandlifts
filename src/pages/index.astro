@@ -1,0 +1,248 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { readFileSync } from 'node:fs';
+import { DIET_ORDER, dietTotals, mealProtein, STARTER_DIETS, STARTER_PROGRAMS, starterExercises } from '../data/starter';
+import { WEEKDAYS } from '../lib/dates';
+
+const round1 = (n: number) => Math.round(n * 10) / 10;
+
+// Everything shown here is the same data onboarding builds a new account from.
+const programs = (['gain', 'lose', 'maintain'] as const).map((goal) => {
+  const program = STARTER_PROGRAMS[goal];
+  return { label: program.label, blurb: program.blurb, days: program.workouts.map((w) => `${WEEKDAYS[w.weekday]} ${w.name}`).join(' · ') };
+});
+const diets = DIET_ORDER.map((key) => {
+  const diet = STARTER_DIETS[key];
+  return { label: diet.label, blurb: diet.blurb, total: Math.min(...dietTotals(diet)) };
+});
+
+// "870+": the catalog size, rounded down so the claim stays true as it grows.
+const catalogSize = JSON.parse(readFileSync('public/exercise-catalog.json', 'utf8')).length;
+const catalogCount = `${Math.floor(catalogSize / 10) * 10}+`;
+
+const gallery = (['squat', 'bench', 'latPulldown', 'ohp'] as const).map((key) => starterExercises[key]);
+
+// Hero preview: three meals of the eggetarian day already logged.
+const previewMeals = STARTER_DIETS.eggetarian.meals.slice(0, 4).map((m, i) => ({ name: m.name, protein: mealProtein(m), done: i < 3 }));
+const previewTotal = round1(previewMeals.filter((m) => m.done).reduce((sum, m) => sum + m.protein, 0));
+const RING = 2 * Math.PI * 61;
+
+const features = [
+  {
+    title: 'Protein, not calories',
+    body: 'Set a daily target in grams. Your usual meals sit on the Today screen with their protein already added up, so logging breakfast is one tap.',
+  },
+  {
+    title: 'Workouts you can rewrite',
+    body: `Create any workout, link it to a day of the week, and pick exercises from a catalog of ${catalogCount} with photos and steps. Add a picture of your own machine too.`,
+  },
+  {
+    title: 'Progress you can see',
+    body: 'Each set shows what you lifted last time. Reports chart protein per day, training consistency, strength and body weight.',
+  },
+];
+
+const faqs = [
+  {
+    q: 'How do I track my protein intake?',
+    a: 'Write down what you eat and the grams of protein in each item, then add them up for the day. Protein & Lifts does the adding for you: you build a list of the foods you eat with protein per serving, group them into meals, and tap a meal to log it. The ring on the Today screen shows how far you are from your target.',
+  },
+  {
+    q: 'How much protein do I need per day to build muscle?',
+    a: 'A commonly cited range for people who lift weights is roughly 1.6 to 2.2 grams of protein per kilogram of body weight per day. For a 60 to 75 kg person that works out to about 100 to 160 g. At sign-up the app suggests about 1.8 g per kg of your target weight, and you can change the target in Settings. This is general guidance, not medical advice.',
+  },
+  {
+    q: 'How can I complete my daily protein intake without supplements?',
+    a: 'Spread protein across the day and build each meal around one dense source. The eggetarian starter plan reaches about 120 g with ordinary food: a sattu and milk shake, eggs or paneer, dal with roti, curd, roasted chana and peanuts. Whey is kept only as a backup, and the tracker suggests it when you are 15 g or more short in the evening.',
+  },
+  {
+    q: 'Is there a protein tracker without calorie counting?',
+    a: 'Yes. Protein & Lifts tracks grams of protein only. There are no calorie budgets, macro pie charts or barcode scanners, which keeps logging to a few taps a day.',
+  },
+  {
+    q: 'Does it work for vegans and vegetarians?',
+    a: 'Yes. At sign-up you choose vegan, vegetarian, eggetarian or non-vegetarian and start with a matching protein day of roughly 120 g: soy milk, tofu and soya chunks for vegans, paneer and curd for vegetarians, eggs or chicken if you eat them. Every food and meal can be changed afterwards.',
+  },
+  {
+    q: 'Is Protein & Lifts free?',
+    a: 'Yes. Tracking protein, planning workouts, logging sessions and viewing reports are all free. You need an account so your plan and logs are saved and available on every device you sign in on.',
+  },
+  {
+    q: 'Can I add my own workouts, exercises and photos?',
+    a: `Everything is editable. Add or remove workouts, change which day each one falls on, set sets, reps and rest time, and upload your own step photos or a photo of the machine at your gym. Exercises come from a catalog of ${catalogCount} with photos and instructions, or you can write your own. The starter plan is only a starting point.`,
+  },
+  {
+    q: 'What happens to my data?',
+    a: 'Your plan and logs are stored in your account, and other users cannot read them. You can export everything as JSON or CSV at any time, and delete all of it from Settings.',
+  },
+];
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: faqs.map((f) => ({
+    '@type': 'Question',
+    name: f.q,
+    acceptedAnswer: { '@type': 'Answer', text: f.a },
+  })),
+};
+---
+
+<Layout
+  title="Protein Tracker & Workout Planner — Protein & Lifts"
+  description="Free protein tracker and workout planner. Log protein in one tap, plan workouts by day with photos, and see your progress in simple reports."
+>
+  <script is:inline slot="head">
+    // Signed-in visitors go straight to their dashboard.
+    try {
+      if (localStorage.getItem('pl-auth')) location.replace('/app/');
+    } catch (e) {}
+  </script>
+
+  <section class="mx-auto grid w-full max-w-5xl items-center gap-10 px-4 pt-14 pb-16 sm:pt-20 md:grid-cols-[1.1fr_0.9fr]">
+    <div>
+      <p class="eyebrow mb-4">Free · protein only · no calorie counting</p>
+      <h1 class="text-4xl leading-[1.05] tracking-[-0.04em] sm:text-5xl">The protein tracker and workout planner that fits on one screen</h1>
+      <p class="mt-5 max-w-xl text-lg leading-7">Protein & Lifts is a free protein tracker for people who lift. Open it, see today's workout and how many grams you still need, log both in a few taps, and close it again.</p>
+      <div class="mt-8 flex flex-wrap gap-3">
+        <a href="/signup/" class="btn btn-primary btn-pill">Sign up free</a>
+        <a href="/login/" class="btn btn-pill">Log in</a>
+      </div>
+      <p class="mt-4 text-sm text-mute">Starts with a training week and a protein day matched to your goal and diet. Change anything.</p>
+    </div>
+
+    <div class="card mx-auto w-full max-w-sm" aria-label="Preview of the Today screen">
+      <div class="flex items-center justify-between gap-3 border-b border-hairline pb-4">
+        <div>
+          <p class="eyebrow">Monday</p>
+          <p class="mt-1 text-lg font-semibold tracking-tight text-ink">Push</p>
+          <p class="text-sm text-mute">5 exercises</p>
+        </div>
+        <span class="btn btn-primary" aria-hidden="true">Start session</span>
+      </div>
+      <div class="flex items-center gap-5 py-4">
+        <div class="relative h-[132px] w-[132px] shrink-0">
+          <svg width="132" height="132" class="-rotate-90" aria-hidden="true">
+            <circle cx="66" cy="66" r="61" fill="none" stroke="var(--hairline)" stroke-width="10"></circle>
+            <circle cx="66" cy="66" r="61" fill="none" stroke="var(--ink)" stroke-width="10" stroke-linecap="round" stroke-dasharray={RING} stroke-dashoffset={RING * (1 - previewTotal / 120)}></circle>
+          </svg>
+          <div class="absolute inset-0 flex flex-col items-center justify-center">
+            <span class="num text-3xl font-semibold tracking-tight text-ink">{previewTotal}</span>
+            <span class="num text-xs text-mute">of 120 g</span>
+          </div>
+        </div>
+        <div>
+          <p class="text-lg font-semibold tracking-tight text-ink">{round1(120 - previewTotal)} g to go</p>
+          <p class="text-sm text-mute">Egg day</p>
+        </div>
+      </div>
+      <ul class="divide-y divide-hairline border-t border-hairline">
+        {previewMeals.map((m) => (
+          <li class="flex items-center gap-3 py-2.5">
+            <span class:list={['min-w-0 flex-1 truncate text-sm font-medium', m.done ? 'text-mute line-through' : 'text-ink']}>{m.name}</span>
+            <span class="num text-sm text-ink">{m.protein} g</span>
+            <span class:list={['btn btn-sm w-16', !m.done && 'btn-primary']} aria-hidden="true">{m.done ? 'Undo' : 'Log'}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </section>
+
+  <section class="border-y border-hairline bg-elevated">
+    <div class="mx-auto grid w-full max-w-5xl gap-8 px-4 py-14 md:grid-cols-3">
+      {features.map((f) => (
+        <div>
+          <h2 class="text-lg tracking-tight">{f.title}</h2>
+          <p class="mt-2 leading-7">{f.body}</p>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <section class="mx-auto w-full max-w-3xl px-4 py-16 text-[17px] leading-8">
+    <h2 class="text-3xl tracking-tight">A protein tracker without the calorie maths</h2>
+    <p class="mt-4">Most nutrition apps ask you to weigh, scan and budget everything you eat. That is a lot of work if the only number you care about is protein. Here you keep a short list of the foods you actually eat, each with its protein per serving, and arrange them into the meals of a normal day. Logging a meal is a single tap, and anything outside the plan takes two fields: what it was and how many grams.</p>
+    <p class="mt-4">The daily protein intake tracker also knows that not every day is the same. A plan can have variants, such as an egg day and a no-egg day, and the meals change with the variant you pick. If the evening arrives and you are still well short, it tells you by how much and offers the backup food you chose, such as a scoop of whey.</p>
+
+    <h2 class="mt-12 text-3xl tracking-tight">A workout planner built around your week</h2>
+    <p class="mt-4">Your training lives in a simple weekly schedule: each day is either a workout or rest. The free workout planner opens on today's session, lists the exercises in order, and shows the weight and reps you managed last time next to every set. A rest timer starts when you log a set, so you are not guessing whether two minutes have passed.</p>
+    <p class="mt-4">Every exercise can carry step photos and a photo of the machine, which helps when the gym floor is busy and three machines look alike. When all your sets reach the rep target, the planner suggests adding weight next time. The rule is yours to set: the default is 12 reps on every set, then 2.5 kg more.</p>
+
+    <h2 class="mt-12 text-3xl tracking-tight">Reports from your own logs</h2>
+    <p class="mt-4">Because the workout and diet planner shares one log, the reports can answer the questions that matter over months. How many days did you hit your protein target? Did you train on the days you planned? Is the bench press moving? Is your body weight rising at the pace you want for a lean bulk? Each chart covers the last 7, 30 or 90 days, and every log can be exported as CSV.</p>
+  </section>
+
+  <section class="border-t border-hairline bg-elevated">
+    <div class="mx-auto w-full max-w-5xl px-4 py-16">
+      <p class="eyebrow mb-3">Included when you sign up</p>
+      <h2 class="text-3xl tracking-tight">A starting plan built from four answers</h2>
+      <p class="mt-3 max-w-2xl leading-7">Tell the app your weight, height, target weight and how you eat. It picks a training week for your goal and a protein day for your diet, and suggests a protein target. It is ordinary data in your account, so rename it, rearrange it or delete it.</p>
+
+      <ul class="mt-8 grid grid-cols-2 gap-3 md:grid-cols-4">
+        {gallery.map((e) => (
+          <li>
+            <img src={e.images[0]} alt={`${e.name} demonstration`} width="640" height="427" loading="lazy" class="aspect-[3/2] w-full rounded-lg border border-hairline object-cover" />
+            <p class="mt-1.5 text-sm font-medium text-ink">{e.name}</p>
+            <p class="text-xs text-mute">{e.muscle_group} · {e.equipment}</p>
+          </li>
+        ))}
+      </ul>
+      <p class="mt-3 text-sm text-mute">Four of the {catalogCount} exercises in the catalog, each with photos and step-by-step instructions.</p>
+
+      <div class="mt-10 grid gap-10 md:grid-cols-2">
+        <div>
+          <h3 class="text-lg tracking-tight">Training week, by goal</h3>
+          <ul class="mt-3 divide-y divide-hairline border-y border-hairline text-sm">
+            {programs.map((p) => (
+              <li class="py-3">
+                <p class="font-medium text-ink">{p.label}</p>
+                <p class="mt-0.5">{p.blurb}</p>
+                <p class="mt-1 text-mute">{p.days}</p>
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div>
+          <h3 class="text-lg tracking-tight">Protein day, by diet</h3>
+          <ul class="mt-3 divide-y divide-hairline border-y border-hairline text-sm">
+            {diets.map((d) => (
+              <li class="flex items-baseline justify-between gap-4 py-3">
+                <div>
+                  <p class="font-medium text-ink">{d.label}</p>
+                  <p class="mt-0.5">{d.blurb}</p>
+                </div>
+                <p class="num shrink-0 font-medium text-ink">{d.total} g</p>
+              </li>
+            ))}
+          </ul>
+          <p class="mt-3 text-xs text-mute">Protein values are standard approximations per serving. Edit them to match what you buy.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="mx-auto w-full max-w-3xl px-4 py-16">
+    <h2 class="text-3xl tracking-tight">Frequently asked questions</h2>
+    <div class="mt-6 divide-y divide-hairline border-y border-hairline">
+      {faqs.map((f) => (
+        <details class="group py-4">
+          <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-medium text-ink">
+            <span>{f.q}</span>
+            <span class="text-mute transition-transform group-open:rotate-45" aria-hidden="true">+</span>
+          </summary>
+          <p class="mt-3 leading-7">{f.a}</p>
+        </details>
+      ))}
+    </div>
+  </section>
+
+  <section class="border-t border-hairline">
+    <div class="mx-auto flex w-full max-w-3xl flex-col items-center px-4 py-16 text-center">
+      <h2 class="text-3xl tracking-tight">Hit your protein. Log your lifts.</h2>
+      <p class="mt-3 max-w-md leading-7">Two minutes to set up, a few taps a day after that.</p>
+      <a href="/signup/" class="btn btn-primary btn-pill mt-7">Sign up free</a>
+    </div>
+  </section>
+
+  <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+</Layout>

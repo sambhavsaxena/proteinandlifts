@@ -1,0 +1,10 @@
+---
+import Layout from '../layouts/Layout.astro';
+import AuthForm from '../app/AuthForm';
+---
+
+<Layout title="Sign up — Protein & Lifts" description="Create a free Protein & Lifts account and start with a ready-made workout split and protein plan." noindex>
+  <div class="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center px-4 py-12">
+    <AuthForm client:only="preact" mode="signup" />
+  </div>
+</Layout>

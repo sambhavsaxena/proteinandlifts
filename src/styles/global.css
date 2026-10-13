@@ -1,0 +1,138 @@
+@import "tailwindcss";
+@import "@fontsource-variable/geist";
+@import "@fontsource-variable/geist-mono";
+
+@source "../";
+
+/* Colours are semantic and flip with the theme, so components never need a
+   dark: variant. Values follow DESIGN.md (Geist: one ink tone, hairline borders). */
+:root {
+  color-scheme: light;
+  --ink: #171717;
+  --body: #4d4d4d;
+  --mute: #6f6f6f;
+  --hairline: #e6e6e6;
+  --canvas: #fafafa;
+  --elevated: #ffffff;
+  --inverse: #ffffff;
+  --link: #0062d1;
+  --good: #0f7b3f;
+  --warn: #ab570a;
+  --warn-soft: #fff4dc;
+  --bad: #c50000;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --ink: #ededed;
+  --body: #a8a8a8;
+  --mute: #8a8a8a;
+  --hairline: #2b2b2b;
+  --canvas: #0a0a0a;
+  --elevated: #141414;
+  --inverse: #0a0a0a;
+  --link: #52a8ff;
+  --good: #4ade80;
+  --warn: #f5a623;
+  --warn-soft: #2a1f08;
+  --bad: #ff6166;
+}
+
+@theme inline {
+  --font-sans: "Geist Variable", Arial, sans-serif;
+  --font-mono: "Geist Mono Variable", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --color-ink: var(--ink);
+  --color-body: var(--body);
+  --color-mute: var(--mute);
+  --color-hairline: var(--hairline);
+  --color-canvas: var(--canvas);
+  --color-elevated: var(--elevated);
+  --color-inverse: var(--inverse);
+  --color-link: var(--link);
+  --color-good: var(--good);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
+  --color-bad: var(--bad);
+}
+
+@layer base {
+  html {
+    background: var(--canvas);
+    color: var(--body);
+    font-family: var(--font-sans);
+    -webkit-text-size-adjust: 100%;
+  }
+  h1, h2, h3 {
+    color: var(--ink);
+    font-weight: 600;
+  }
+  :focus-visible {
+    outline: 2px solid var(--link);
+    outline-offset: 2px;
+  }
+  input, select, textarea, button {
+    font: inherit;
+  }
+  /* 16px inputs stop iOS zooming the page on focus. */
+  input, select, textarea {
+    font-size: 16px;
+  }
+}
+
+@layer components {
+  .eyebrow {
+    @apply font-mono text-xs font-medium tracking-normal text-mute uppercase;
+  }
+  .card {
+    @apply rounded-xl border border-hairline bg-elevated p-4 sm:p-5;
+  }
+  .btn {
+    @apply inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-md border border-hairline bg-elevated px-3.5 text-sm font-medium whitespace-nowrap text-ink no-underline transition-colors select-none hover:border-mute disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .btn-primary {
+    @apply border-ink bg-ink text-inverse hover:border-ink hover:opacity-85;
+  }
+  .btn-pill {
+    @apply h-11 rounded-full px-5 text-base;
+  }
+  .btn-sm {
+    @apply h-8 px-2.5 text-[13px];
+  }
+  .btn-quiet {
+    @apply border-transparent bg-transparent text-body hover:border-transparent hover:bg-hairline/60 hover:text-ink;
+  }
+  .btn-danger {
+    @apply text-bad;
+  }
+  .input {
+    @apply h-10 w-full min-w-0 rounded-md border border-hairline bg-elevated px-3 text-ink placeholder:text-mute/70 focus:border-mute;
+  }
+  textarea.input {
+    @apply h-auto py-2 leading-6;
+  }
+  .label {
+    @apply mb-1.5 block text-[13px] font-medium text-body;
+  }
+  .num {
+    @apply tabular-nums;
+  }
+  .prose-page {
+    @apply mx-auto w-full max-w-2xl px-4 py-12 text-[15px] leading-7 sm:py-16;
+  }
+  .prose-page h1 {
+    @apply mb-6 text-3xl tracking-tight sm:text-4xl;
+  }
+  .prose-page h2 {
+    @apply mt-10 mb-3 text-xl tracking-tight;
+  }
+  .prose-page p,
+  .prose-page ul {
+    @apply mb-4;
+  }
+  .prose-page ul {
+    @apply list-disc pl-5;
+  }
+  .prose-page a {
+    @apply text-link underline underline-offset-2;
+  }
+}

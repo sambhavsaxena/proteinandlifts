@@ -1,0 +1,41 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { SITE } from '../site';
+---
+
+<Layout title="Terms & Conditions — Protein & Lifts" description="The terms for using Protein & Lifts: a free protein tracker and workout planner provided as is, with no medical advice and no warranty.">
+  <article class="prose-page">
+    <h1>Terms & Conditions</h1>
+    <p>Last updated: 13 October 2026</p>
+    <p>By creating an account on {SITE.domain} or using {SITE.name}, you agree to these terms.</p>
+
+    <h2>The service</h2>
+    <p>{SITE.name} is a free tool for planning workouts, tracking protein intake and reviewing your own logs. Features may change, and the service may be paused or discontinued. If that happens we will try to give notice so you can export your data.</p>
+
+    <h2>Not medical or professional advice</h2>
+    <p>The starter plan, protein figures, exercise instructions and progression suggestions are general information. They are not medical, nutritional or coaching advice and are not tailored to you. Exercise carries a risk of injury. Consult a doctor or qualified professional before starting or changing a diet or training programme, and stop if something hurts.</p>
+    <p>Protein values for foods are approximations. Check the label on what you actually eat.</p>
+
+    <h2>Your account</h2>
+    <ul>
+      <li>Keep your password private. You are responsible for activity on your account.</li>
+      <li>Only upload photos you have the right to use, and nothing unlawful or abusive.</li>
+      <li>Do not try to access other people's data or disrupt the service.</li>
+    </ul>
+
+    <h2>Your content</h2>
+    <p>Your plans, logs and photos remain yours. You give us permission to store and display them to you so the service can work. You can export or delete them at any time from Settings.</p>
+
+    <h2>No warranty</h2>
+    <p>The service is provided "as is", without warranties of any kind. We do not guarantee that it will be uninterrupted, error free or that data will never be lost. Export a copy of anything you cannot afford to lose.</p>
+
+    <h2>Limitation of liability</h2>
+    <p>To the extent permitted by law, {SITE.creator} and {SITE.name} are not liable for any injury, loss or damage arising from your use of the service or from following any plan, figure or suggestion shown in it.</p>
+
+    <h2>Changes</h2>
+    <p>These terms may be updated. Continued use after a change means you accept the new terms.</p>
+
+    <h2>Contact</h2>
+    <p>Questions about these terms: <a href={`mailto:${SITE.email}`}>{SITE.email}</a>.</p>
+  </article>
+</Layout>

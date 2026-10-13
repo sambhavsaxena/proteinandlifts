@@ -1,0 +1,121 @@
+---
+import '../styles/global.css';
+import { SITE, APP_NAV, LEGAL_NAV } from '../site';
+
+interface Props {
+  title: string;
+  description: string;
+  /** Private screens: keeps the page out of search results. */
+  noindex?: boolean;
+  /** Signed-in app chrome: tab navigation instead of the marketing header. */
+  app?: boolean;
+}
+
+const { title, description, noindex = false, app = false } = Astro.props;
+const canonical = new URL(Astro.url.pathname, Astro.site).href;
+const shouldNoindex = noindex || Astro.url.hostname.endsWith('.pages.dev');
+const path = Astro.url.pathname.endsWith('/') ? Astro.url.pathname : `${Astro.url.pathname}/`;
+const year = new Date().getFullYear();
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={SITE.name} />
+    <meta property="og:image" content={`https://${SITE.domain}/og.png`} />
+    {shouldNoindex && <meta name="robots" content="noindex, nofollow" />}
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="sitemap" href="/sitemap-index.xml" />
+    <meta name="theme-color" content="#fafafa" />
+    <script is:inline>
+      // Runs before first paint: theme, and whether a session is stored.
+      (function () {
+        var root = document.documentElement;
+        try {
+          var theme = localStorage.getItem('pl-theme');
+          if (!theme) theme = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+          root.dataset.theme = theme;
+          if (localStorage.getItem('pl-auth')) root.dataset.auth = '';
+        } catch (e) {
+          root.dataset.theme = 'light';
+        }
+      })();
+    </script>
+    <slot name="head" />
+  </head>
+  <body class="flex min-h-screen flex-col bg-canvas text-body antialiased">
+    <a href="#main" class="btn sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50">Skip to content</a>
+    <header class="sticky top-0 z-30 border-b border-hairline bg-canvas/90 backdrop-blur">
+      <div class="mx-auto flex h-14 w-full max-w-5xl items-center gap-3 px-4">
+        <a href={app ? '/app/' : '/'} class="flex items-center gap-2 text-[15px] font-semibold tracking-tight text-ink no-underline">
+          <svg width="22" height="22" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="currentColor"></rect><path d="M8 12v8M11 9.5v13M21 9.5v13M24 12v8M11 16h10" stroke="var(--inverse)" stroke-width="2.4" stroke-linecap="round" fill="none"></path></svg>
+          <span>{SITE.name}</span>
+        </a>
+        {app && (
+          <nav aria-label="App" class="ml-4 hidden items-center gap-1 md:flex">
+            {APP_NAV.map((item) => (
+              <a href={item.href} aria-current={path === item.href ? 'page' : undefined} class="rounded-full px-3 py-1.5 text-sm text-body no-underline hover:text-ink aria-[current=page]:bg-hairline/70 aria-[current=page]:text-ink">{item.label}</a>
+            ))}
+          </nav>
+        )}
+        <div class="ml-auto flex items-center gap-2">
+          <button type="button" id="theme-toggle" class="btn btn-quiet h-9 w-9 px-0" aria-label="Switch between light and dark theme">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path></svg>
+          </button>
+          {!app && (
+            <>
+              <a href="/login/" data-guest class="btn btn-quiet">Log in</a>
+              <a href="/signup/" data-guest class="btn btn-primary">Sign up</a>
+              <a href="/app/" data-member class="btn btn-primary">Open app</a>
+            </>
+          )}
+        </div>
+      </div>
+    </header>
+
+    <main id="main" class:list={['flex flex-1 flex-col', app && 'pb-20 md:pb-0']}>
+      <slot />
+    </main>
+
+    <footer class:list={['border-t border-hairline', app && 'hidden md:block']}>
+      <div class="mx-auto flex w-full max-w-5xl flex-col gap-3 px-4 py-8 text-sm sm:flex-row sm:items-center sm:justify-between">
+        <p class="text-mute">© {year} {SITE.name}. Built by {SITE.creator}.</p>
+        <nav aria-label="Legal" class="flex flex-wrap gap-x-5 gap-y-2">
+          {LEGAL_NAV.map((item) => <a href={item.href} class="text-body hover:text-ink">{item.label}</a>)}
+        </nav>
+      </div>
+    </footer>
+
+    {app && (
+      <nav aria-label="App" class="fixed inset-x-0 bottom-0 z-30 grid grid-cols-5 border-t border-hairline bg-canvas/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden">
+        {APP_NAV.map((item) => (
+          <a href={item.href} aria-current={path === item.href ? 'page' : undefined} class="flex h-14 items-center justify-center text-[13px] font-medium text-mute no-underline aria-[current=page]:text-ink">{item.label}</a>
+        ))}
+      </nav>
+    )}
+
+    <script is:inline>
+      document.getElementById('theme-toggle').addEventListener('click', function () {
+        var root = document.documentElement;
+        var next = root.dataset.theme === 'dark' ? 'light' : 'dark';
+        root.dataset.theme = next;
+        try { localStorage.setItem('pl-theme', next); } catch (e) {}
+      });
+    </script>
+    <style is:global>
+      html[data-auth] [data-guest],
+      html:not([data-auth]) [data-member] {
+        display: none;
+      }
+    </style>
+  </body>
+</html>
