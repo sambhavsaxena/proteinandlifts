@@ -4,7 +4,7 @@ import { mediaUrls } from '../lib/media';
 import { must, supabase } from '../lib/supabase';
 import type { Exercise, Profile, SetLog, Workout, WorkoutExercise, WorkoutSession } from '../lib/types';
 import { Gate, type Ctx } from './Gate';
-import { Card, ConfirmButton, cx, ErrorNote, g, IconButton, Loading, Page, param } from './ui';
+import { Card, ConfirmButton, cx, ErrorNote, g, IconButton, Loading, Page, param, ZoomImage } from './ui';
 
 type Data = {
   session: WorkoutSession;
@@ -293,10 +293,10 @@ function HowTo({ exercise, urls }: { exercise: Exercise; urls: Record<string, st
     <details class="mt-3 border-t border-hairline pt-3">
       <summary class="cursor-pointer text-sm font-medium text-ink">How to do it</summary>
       {media.length > 0 && (
-        <ul class="mt-3 grid grid-cols-2 gap-2">
+        <ul class="mt-3 grid grid-cols-2 gap-2" data-zoom-group>
           {media.map((m) => (
             <li key={m.id}>
-              <img src={urls[m.id]} alt={m.caption ?? exercise.name} loading="lazy" class="aspect-[3/2] w-full rounded-lg border border-hairline object-cover" />
+              <ZoomImage src={urls[m.id]} alt={m.caption ?? exercise.name} class="aspect-[3/2] w-full rounded-lg border border-hairline object-cover" />
               <p class="mt-1 text-xs text-mute">{m.kind === 'machine' ? 'Machine' : 'Step'}{m.caption ? ` · ${m.caption}` : ''}</p>
             </li>
           ))}

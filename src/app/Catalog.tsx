@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'preact/hooks';
 import { addCatalogExercise, catalogImage, loadCatalog, mediaCaption, type CatalogEntry } from '../lib/catalog';
 import { must, supabase } from '../lib/supabase';
-import { Card, Empty, ErrorNote, Loading, Page } from './ui';
+import { Card, Empty, ErrorNote, Loading, Page, ZoomImage } from './ui';
 
 const PAGE_SIZE = 30;
 
@@ -135,9 +135,9 @@ export function CatalogPicker({ workoutId }: { workoutId: string | null }) {
                 {expanded && (
                   <div class="pb-4">
                     {entry.images > 0 && (
-                      <div class="grid grid-cols-2 gap-2">
+                      <div class="grid grid-cols-2 gap-2" data-zoom-group>
                         {Array.from({ length: entry.images }, (_, n) => (
-                          <img key={n} src={catalogImage(entry.id, n)} alt={`${entry.name}: ${mediaCaption(n).toLowerCase()}`} loading="lazy" class="aspect-[3/2] w-full rounded-lg border border-hairline object-cover" />
+                          <ZoomImage key={n} src={catalogImage(entry.id, n)} alt={`${entry.name}: ${mediaCaption(n).toLowerCase()}`} class="aspect-[3/2] w-full rounded-lg border border-hairline object-cover" />
                         ))}
                       </div>
                     )}

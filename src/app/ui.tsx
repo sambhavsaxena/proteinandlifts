@@ -108,6 +108,15 @@ export function IconButton({ label, onClick, disabled, children }: { label: stri
   );
 }
 
+/** Image that opens full screen and zooms on click (see lib/zoom.ts). Wrap a set in `data-zoom-group` to page through it. */
+export function ZoomImage({ src, alt, class: className }: { src: string; alt: string; class?: string }) {
+  return (
+    <button type="button" data-zoom aria-haspopup="dialog" class="block h-full w-full cursor-zoom-in rounded-lg">
+      <img src={src} alt={alt} loading="lazy" class={className} />
+    </button>
+  );
+}
+
 /** Progress ring. Purely visual: the caller renders the number next to it. */
 export function Ring({ value, max, size = 132, children }: { value: number; max: number; size?: number; children?: ComponentChildren }) {
   const stroke = 10;

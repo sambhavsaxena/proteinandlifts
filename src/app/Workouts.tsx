@@ -5,7 +5,7 @@ import { must, supabase } from '../lib/supabase';
 import type { Exercise, ExerciseMedia, MediaKind, ScheduleRow, Workout, WorkoutExercise } from '../lib/types';
 import { CatalogPicker } from './Catalog';
 import { Gate, type Ctx } from './Gate';
-import { Card, ConfirmButton, Empty, ErrorNote, Field, IconButton, Loading, NumberInput, Page, param, Segmented } from './ui';
+import { Card, ConfirmButton, Empty, ErrorNote, Field, IconButton, Loading, NumberInput, Page, param, Segmented, ZoomImage } from './ui';
 
 const byPosition = (a: { position: number }, b: { position: number }) => a.position - b.position;
 
@@ -367,11 +367,11 @@ function ExerciseEditor({ id, userId }: { id: string; userId: string }) {
 
       <Card title="Photos">
         {media.length === 0 && <Empty>No photos yet. Add step-by-step shots, or a picture of the machine so you can find it on the gym floor.</Empty>}
-        <ul class="grid gap-4 sm:grid-cols-2">
+        <ul class="grid gap-4 sm:grid-cols-2" data-zoom-group>
           {media.map((m) => (
             <li key={m.id} class="flex flex-col gap-2">
               <div class="aspect-[3/2] overflow-hidden rounded-lg border border-hairline bg-canvas">
-                {urls[m.id] && <img src={urls[m.id]} alt={m.caption ?? `${exercise.name} photo`} loading="lazy" class="h-full w-full object-cover" />}
+                {urls[m.id] && <ZoomImage src={urls[m.id]} alt={m.caption ?? `${exercise.name} photo`} class="h-full w-full object-cover" />}
               </div>
               <input class="input" aria-label="Caption" placeholder="Caption" value={m.caption ?? ''} onChange={(e) => patchMedia(m, { caption: e.currentTarget.value.trim() || null })} />
               <div class="flex items-center justify-between gap-2">

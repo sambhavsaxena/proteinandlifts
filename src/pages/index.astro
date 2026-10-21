@@ -178,10 +178,12 @@ const jsonLd = {
       <h2 class="text-3xl tracking-tight">A starting plan built from four answers</h2>
       <p class="mt-3 max-w-2xl leading-7">Tell the app your weight, height, target weight and how you eat. It picks a training week for your goal and a protein day for your diet, and suggests a protein target. It is ordinary data in your account, so rename it, rearrange it or delete it.</p>
 
-      <ul class="mt-8 grid grid-cols-2 gap-3 md:grid-cols-4">
+      <ul class="mt-8 grid grid-cols-2 gap-3 md:grid-cols-4" data-zoom-group>
         {gallery.map((e) => (
           <li>
-            <img src={e.images[0]} alt={`${e.name} demonstration`} width="640" height="427" loading="lazy" class="aspect-[3/2] w-full rounded-lg border border-hairline object-cover" />
+            <button type="button" data-zoom aria-haspopup="dialog" class="block w-full cursor-zoom-in rounded-lg">
+              <img src={e.images[0]} alt={`${e.name} demonstration`} width="640" height="427" loading="lazy" class="aspect-[3/2] w-full rounded-lg border border-hairline object-cover" />
+            </button>
             <p class="mt-1.5 text-sm font-medium text-ink">{e.name}</p>
             <p class="text-xs text-mute">{e.muscle_group} · {e.equipment}</p>
           </li>

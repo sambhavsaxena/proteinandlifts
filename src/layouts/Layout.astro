@@ -113,6 +113,9 @@ const year = new Date().getFullYear();
         try { localStorage.setItem('pl-theme', next); } catch (e) {}
       });
     </script>
+    <script>
+      import '../lib/zoom';
+    </script>
     <style is:global>
       html[data-auth] [data-guest],
       html:not([data-auth]) [data-member] {
