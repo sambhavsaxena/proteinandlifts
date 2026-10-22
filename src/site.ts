@@ -1,7 +1,7 @@
 export const SITE = {
   name: 'Trainory',
   domain: 'trainory.pages.dev',
-  email: 'outreach@mail.unchainedin.app',
+  email: 'sambhavsaxena02@gmail.com',
   creator: 'Sambhav Saxena',
 };
 
