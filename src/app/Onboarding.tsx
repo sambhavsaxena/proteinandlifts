@@ -1,5 +1,6 @@
 import { useState } from 'preact/hooks';
-import { DIET_ORDER, dietTotals, goalFor, mealProtein, STARTER_DIETS, STARTER_PROGRAMS, suggestedProtein, type DietPreference } from '../data/starter';
+import { FOOD_CATALOG, fitsDiet } from '../data/food-catalog';
+import { DIET_OPTIONS, DIET_ORDER, goalFor, STARTER_PROGRAMS, suggestedProtein, type DietPreference } from '../data/starter';
 import { WEEKDAYS_LONG } from '../lib/dates';
 import { cx, ErrorNote, Field, g } from './ui';
 
@@ -88,8 +89,7 @@ export function Onboarding({ onSubmit }: { onSubmit: (answers: Answers) => Promi
       {step === 1 && (
         <div role="radiogroup" aria-label="Diet" class="flex flex-col gap-3">
           {DIET_ORDER.map((key) => {
-            const option = STARTER_DIETS[key];
-            const totals = dietTotals(option);
+            const option = DIET_OPTIONS[key];
             return (
               <button
                 type="button"
@@ -99,10 +99,7 @@ export function Onboarding({ onSubmit }: { onSubmit: (answers: Answers) => Promi
                 onClick={() => setDiet(key)}
                 class="card cursor-pointer text-left transition-colors hover:border-mute aria-checked:border-accent aria-checked:ring-1 aria-checked:ring-accent"
               >
-                <span class="flex items-baseline justify-between gap-3">
-                  <span class="font-semibold tracking-tight text-ink">{option.label}</span>
-                  <span class="num shrink-0 text-sm text-mute">about {g(Math.min(...totals))} g a day</span>
-                </span>
+                <span class="font-semibold tracking-tight text-ink">{option.label}</span>
                 <span class="mt-1 block text-sm">{option.blurb}</span>
               </button>
             );
@@ -128,8 +125,7 @@ type ReviewProps = { weightKg: number; targetKg: number; diet: DietPreference; p
 
 function Review({ weightKg, targetKg, diet, protein, suggested, onProtein }: ReviewProps) {
   const program = STARTER_PROGRAMS[goalFor(weightKg, targetKg)];
-  const plan = STARTER_DIETS[diet];
-  const totals = dietTotals(plan);
+  const foods = FOOD_CATALOG.filter((f) => fitsDiet(f, diet)).length;
 
   return (
     <>
@@ -149,18 +145,8 @@ function Review({ weightKg, targetKg, diet, protein, suggested, onProtein }: Rev
       </section>
 
       <section class="card">
-        <p class="eyebrow">Diet · {plan.label}</p>
-        <ul class="mt-3 divide-y divide-hairline border-y border-hairline text-sm">
-          {plan.meals.map((m) => (
-            <li key={m.name} class="flex items-center justify-between gap-3 py-2">
-              <span class="text-ink">{m.name}</span>
-              <span class="num">{g(mealProtein(m))} g</span>
-            </li>
-          ))}
-        </ul>
-        <p class="num mt-3 text-sm text-ink">
-          {plan.variants.length ? plan.variants.map((v, i) => `${v}: ${g(totals[i])} g`).join('  ·  ') : `Daily total: ${g(totals[0])} g`}
-        </p>
+        <p class="eyebrow">Diet · {DIET_OPTIONS[diet].label}</p>
+        <p class="mt-2 text-sm">You start with an empty meal plan and build your own meals. Pick from {foods} protein-rich foods that suit how you eat, or add foods of your own.</p>
       </section>
 
       <section class="card">

@@ -1,7 +1,8 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import { readFileSync } from 'node:fs';
-import { DIET_ORDER, dietTotals, mealProtein, STARTER_DIETS, STARTER_PROGRAMS, starterExercises } from '../data/starter';
+import { FOOD_CATALOG, FOOD_CATEGORIES } from '../data/food-catalog';
+import { STARTER_PROGRAMS, starterExercises } from '../data/starter';
 import { WEEKDAYS } from '../lib/dates';
 
 const round1 = (n: number) => Math.round(n * 10) / 10;
@@ -11,9 +12,10 @@ const programs = (['gain', 'lose', 'maintain'] as const).map((goal) => {
   const program = STARTER_PROGRAMS[goal];
   return { label: program.label, blurb: program.blurb, days: program.workouts.map((w) => `${WEEKDAYS[w.weekday]} ${w.name}`).join(' · ') };
 });
-const diets = DIET_ORDER.map((key) => {
-  const diet = STARTER_DIETS[key];
-  return { label: diet.label, blurb: diet.blurb, total: Math.min(...dietTotals(diet)) };
+// The shared food list by category, densest sources first.
+const foodGroups = FOOD_CATEGORIES.map((category) => {
+  const foods = FOOD_CATALOG.filter((f) => f.category === category).sort((a, b) => b.protein_g - a.protein_g);
+  return { category, count: foods.length, examples: foods.slice(0, 4).map((f) => f.name).join(', ') };
 });
 
 // "870+": the catalog size, rounded down so the claim stays true as it grows.
@@ -22,8 +24,15 @@ const catalogCount = `${Math.floor(catalogSize / 10) * 10}+`;
 
 const gallery = (['squat', 'bench', 'latPulldown', 'ohp'] as const).map((key) => starterExercises[key]);
 
-// Hero preview: three meals of the eggetarian day already logged.
-const previewMeals = STARTER_DIETS.eggetarian.meals.slice(0, 4).map((m, i) => ({ name: m.name, protein: mealProtein(m), done: i < 3 }));
+// Hero preview: an example day built from shared foods, three meals already logged.
+const food = (name: string) => FOOD_CATALOG.find((f) => f.name === name)!;
+const meal = (name: string, items: [string, number][]) => ({ name, protein: round1(items.reduce((sum, [n, qty]) => sum + qty * food(n).protein_g, 0)) });
+const previewMeals = [
+  meal('Breakfast', [['Egg', 3], ['Roti', 2]]),
+  meal('Lunch', [['Dal', 1.5], ['Roti', 3], ['Curd', 1]]),
+  meal('Snack', [['Roasted chana', 1], ['Peanuts', 1]]),
+  meal('Dinner', [['Paneer', 1], ['Roti', 2]]),
+].map((m, i) => ({ ...m, done: i < 3 }));
 const previewTotal = round1(previewMeals.filter((m) => m.done).reduce((sum, m) => sum + m.protein, 0));
 const RING = 2 * Math.PI * 61;
 
@@ -53,7 +62,7 @@ const faqs = [
   },
   {
     q: 'How can I complete my daily protein intake without supplements?',
-    a: 'Spread protein across the day and build each meal around one dense source. The eggetarian starter plan reaches about 120 g with ordinary food: a sattu and milk shake, eggs or paneer, dal with roti, curd, roasted chana and peanuts. Whey is kept only as a backup, and the tracker suggests it when you are 15 g or more short in the evening.',
+    a: `Spread protein across the day and build each meal around one dense source. Ordinary food gets most people there: eggs or paneer at breakfast, dal or chicken with roti or rice, curd, roasted chana and peanuts as snacks. Trainory's shared list has ${FOOD_CATALOG.length} protein-rich foods with protein per serving to build meals from. Mark a supplement such as whey as a backup food and the tracker suggests it only when you are 15 g or more short in the evening.`,
   },
   {
     q: 'Is there a protein tracker without calorie counting?',
@@ -61,7 +70,7 @@ const faqs = [
   },
   {
     q: 'Does it work for vegans and vegetarians?',
-    a: 'Yes. At sign-up you choose vegan, vegetarian, eggetarian or non-vegetarian and start with a matching protein day of roughly 120 g: soy milk, tofu and soya chunks for vegans, paneer and curd for vegetarians, eggs or chicken if you eat them. Every food and meal can be changed afterwards.',
+    a: 'Yes. At sign-up you choose vegan, vegetarian, eggetarian or non-vegetarian, and the shared food list only offers foods that fit: soy milk, tofu, tempeh and soya chunks for vegans, paneer, curd and Greek yogurt for vegetarians, eggs, chicken or fish if you eat them. You build your own meals from it, and anything missing can be added as a food of your own.',
   },
   {
     q: 'Is Trainory free?',
@@ -108,7 +117,7 @@ const jsonLd = {
         <a href="/signup/" class="btn btn-primary btn-pill">Sign up free</a>
         <a href="/login/" class="btn btn-pill">Log in</a>
       </div>
-      <p class="mt-4 text-sm text-mute">Starts with a training week and a protein day matched to your goal and diet. Change anything.</p>
+      <p class="mt-4 text-sm text-mute">Starts with a training week matched to your goal and a shared list of protein-rich foods for how you eat. Change anything.</p>
     </div>
 
     <div class="card mx-auto w-full max-w-sm" aria-label="Preview of the Today screen">
@@ -133,7 +142,7 @@ const jsonLd = {
         </div>
         <div>
           <p class="text-lg font-semibold tracking-tight text-ink">{round1(120 - previewTotal)} g to go</p>
-          <p class="text-sm text-mute">Egg day</p>
+          <p class="text-sm text-mute">My plan</p>
         </div>
       </div>
       <ul class="divide-y divide-hairline border-t border-hairline">
@@ -176,7 +185,7 @@ const jsonLd = {
     <div class="mx-auto w-full max-w-5xl px-4 py-16">
       <p class="eyebrow mb-3">Included when you sign up</p>
       <h2 class="text-3xl tracking-tight">A starting plan built from four answers</h2>
-      <p class="mt-3 max-w-2xl leading-7">Tell the app your weight, height, target weight and how you eat. It picks a training week for your goal and a protein day for your diet, and suggests a protein target. It is ordinary data in your account, so rename it, rearrange it or delete it.</p>
+      <p class="mt-3 max-w-2xl leading-7">Tell the app your weight, height, target weight and how you eat. It picks a training week for your goal and suggests a protein target, and you build your meals from a shared list of foods that suit your diet. It is ordinary data in your account, so rename it, rearrange it or delete it.</p>
 
       <ul class="mt-8 grid grid-cols-2 gap-3 md:grid-cols-4" data-zoom-group>
         {gallery.map((e) => (
@@ -205,15 +214,15 @@ const jsonLd = {
           </ul>
         </div>
         <div>
-          <h3 class="text-lg tracking-tight">Protein day, by diet</h3>
+          <h3 class="text-lg tracking-tight">Shared food list, {FOOD_CATALOG.length} foods</h3>
           <ul class="mt-3 divide-y divide-hairline border-y border-hairline text-sm">
-            {diets.map((d) => (
+            {foodGroups.map((group) => (
               <li class="flex items-baseline justify-between gap-4 py-3">
                 <div>
-                  <p class="font-medium text-ink">{d.label}</p>
-                  <p class="mt-0.5">{d.blurb}</p>
+                  <p class="font-medium text-ink">{group.category}</p>
+                  <p class="mt-0.5">{group.examples}</p>
                 </div>
-                <p class="num shrink-0 font-medium text-ink">{d.total} g</p>
+                <p class="num shrink-0 font-medium text-ink">{group.count}</p>
               </li>
             ))}
           </ul>

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'preact/hooks';
-import { DIET_ORDER, STARTER_DIETS, type DietPreference } from '../data/starter';
-import { fetchFoods, fetchPlans, itemsFor, proteinOf } from '../lib/diet';
-import { addDietTemplate } from '../lib/seed';
+import { catalogFoodsFor, FOOD_CATEGORIES, type CatalogFood } from '../data/food-catalog';
+import { DIET_OPTIONS } from '../data/starter';
+import { addCatalogFood, fetchFoods, fetchPlans, itemsFor, proteinOf } from '../lib/diet';
 import { must, supabase } from '../lib/supabase';
 import type { DietPlan, Food, Meal, MealItem } from '../lib/types';
 import { Gate, type Ctx } from './Gate';
@@ -10,6 +10,8 @@ import { Card, ConfirmButton, cx, Empty, ErrorNote, Field, g, IconButton, Loadin
 type Tab = 'Plan' | 'Foods';
 const TABS: readonly Tab[] = ['Plan', 'Foods'];
 const EVERY_DAY = '';
+/** Select values for shared-list foods: the prefix plus the food's name. */
+const SHARED = 'shared:';
 
 function DietScreen({ profile, saveProfile }: Ctx) {
   const [tab, setTab] = useState<Tab>(location.hash === '#foods' ? 'Foods' : 'Plan');
@@ -32,6 +34,14 @@ function DietScreen({ profile, saveProfile }: Ctx) {
     });
   }, []);
 
+  // Shared foods that suit the diet and are not in the account's list yet.
+  const shared = useMemo(() => catalogFoodsFor(profile.diet_preference, foods.map((f) => f.name)), [profile.diet_preference, foods]);
+  const adopt: Adopt = async (food) => {
+    const copy = await addCatalogFood(food, foods);
+    setFoods((current) => (current.some((f) => f.id === copy.id) ? current : [...current, copy].sort((a, b) => a.name.localeCompare(b.name))));
+    return copy;
+  };
+
   if (!plans) return <Page title="Diet">{error ? <ErrorNote error={error} /> : <Loading />}</Page>;
   const plan = plans.find((p) => p.id === planId) ?? null;
   const setPlan = (next: DietPlan) => setPlans(plans.map((p) => (p.id === next.id ? next : p)));
@@ -42,17 +52,6 @@ function DietScreen({ profile, saveProfile }: Ctx) {
       setPlans([...plans, { ...created, meals: [] } as DietPlan]);
       setPlanId(created.id);
       if (!profile.active_plan_id) await saveProfile({ active_plan_id: created.id });
-    });
-
-  // Adds one of the starter diets as a new plan, reusing foods already in the list.
-  const addTemplate = (preference: DietPreference) =>
-    run(async () => {
-      const id = await addDietTemplate(supabase, preference);
-      const [p, f] = await Promise.all([fetchPlans(), fetchFoods()]);
-      setPlans(p);
-      setFoods(f);
-      setPlanId(id);
-      if (!profile.active_plan_id) await saveProfile({ active_plan_id: id });
     });
 
   const deletePlan = () =>
@@ -81,7 +80,7 @@ function DietScreen({ profile, saveProfile }: Ctx) {
     >
       <ErrorNote error={error} />
       {tab === 'Foods' ? (
-        <FoodsTab foods={foods} setFoods={setFoods} run={run} />
+        <FoodsTab foods={foods} setFoods={setFoods} shared={shared} adopt={adopt} dietLabel={profile.diet_preference ? DIET_OPTIONS[profile.diet_preference].label : null} run={run} />
       ) : (
         <>
           <Card>
@@ -97,14 +96,10 @@ function DietScreen({ profile, saveProfile }: Ctx) {
                 <button type="button" class="btn btn-primary" onClick={() => run(() => saveProfile({ active_plan_id: plan.id }))}>Follow this plan</button>
               )}
               <button type="button" class="btn" onClick={createPlan}>New plan</button>
-              <select class="input w-auto" aria-label="Add a starter diet" value="" onChange={(e) => e.currentTarget.value && addTemplate(e.currentTarget.value as DietPreference)}>
-                <option value="">Add a starter diet…</option>
-                {DIET_ORDER.map((key) => <option key={key} value={key}>{STARTER_DIETS[key].label}</option>)}
-              </select>
             </div>
           </Card>
           {plan ? (
-            <PlanEditor key={plan.id} plan={plan} setPlan={setPlan} foods={foods} target={profile.protein_target_g} run={run} onDelete={deletePlan} onNeedFood={() => setTab('Foods')} />
+            <PlanEditor key={plan.id} plan={plan} setPlan={setPlan} foods={foods} shared={shared} adopt={adopt} target={profile.protein_target_g} run={run} onDelete={deletePlan} onNeedFood={() => setTab('Foods')} />
           ) : (
             <Empty>Create a plan to lay out the meals you eat on a normal day.</Empty>
           )}
@@ -115,18 +110,21 @@ function DietScreen({ profile, saveProfile }: Ctx) {
 }
 
 type Run = (fn: () => Promise<void>) => void;
+type Adopt = (food: CatalogFood) => Promise<Food>;
 
 type PlanProps = {
   plan: DietPlan;
   setPlan: (plan: DietPlan) => void;
   foods: Food[];
+  shared: CatalogFood[];
+  adopt: Adopt;
   target: number;
   run: Run;
   onDelete: () => void;
   onNeedFood: () => void;
 };
 
-function PlanEditor({ plan, setPlan, foods, target, run, onDelete, onNeedFood }: PlanProps) {
+function PlanEditor({ plan, setPlan, foods, shared, adopt, target, run, onDelete, onNeedFood }: PlanProps) {
   const foodMap = useMemo(() => new Map(foods.map((f) => [f.id, f])), [foods]);
   const setMeal = (meal: Meal) => setPlan({ ...plan, meals: plan.meals.map((m) => (m.id === meal.id ? meal : m)) });
   // A plan without variants still has one implicit "every day" column.
@@ -216,6 +214,8 @@ function PlanEditor({ plan, setPlan, foods, target, run, onDelete, onNeedFood }:
           variants={plan.variants}
           columns={columns}
           foods={foods}
+          shared={shared}
+          adopt={adopt}
           foodMap={foodMap}
           run={run}
           onMove={(by) => moveMeal(index, by)}
@@ -240,6 +240,8 @@ type MealProps = {
   variants: string[];
   columns: (string | null)[];
   foods: Food[];
+  shared: CatalogFood[];
+  adopt: Adopt;
   foodMap: Map<string, Food>;
   run: Run;
   onMove: (by: -1 | 1) => void;
@@ -251,7 +253,7 @@ type MealProps = {
 
 const NEW_FOOD = 'new';
 
-function MealCard({ meal, setMeal, variants, columns, foods, foodMap, run, onMove, canMoveUp, canMoveDown, onDelete, onNeedFood }: MealProps) {
+function MealCard({ meal, setMeal, variants, columns, foods, shared, adopt, foodMap, run, onMove, canMoveUp, canMoveDown, onDelete, onNeedFood }: MealProps) {
   const [adding, setAdding] = useState('');
 
   const rename = (name: string) =>
@@ -272,9 +274,11 @@ function MealCard({ meal, setMeal, variants, columns, foods, foodMap, run, onMov
       setMeal({ ...meal, meal_items: meal.meal_items.filter((i) => i.id !== item.id) });
     });
 
-  const addItem = (foodId: string) => {
-    if (foodId === NEW_FOOD) return onNeedFood();
+  const addItem = (value: string) => {
+    if (value === NEW_FOOD) return onNeedFood();
     run(async () => {
+      const fromShared = value.startsWith(SHARED) ? shared.find((f) => f.name === value.slice(SHARED.length)) : undefined;
+      const foodId = fromShared ? (await adopt(fromShared)).id : value;
       const position = meal.meal_items.length ? Math.max(...meal.meal_items.map((i) => i.position)) + 1 : 0;
       const created = must(await supabase.from('meal_items').insert({ meal_id: meal.id, food_id: foodId, qty: 1, position }).select('id,meal_id,food_id,qty,variant,position').single());
       setMeal({ ...meal, meal_items: [...meal.meal_items, created as MealItem] });
@@ -316,8 +320,17 @@ function MealCard({ meal, setMeal, variants, columns, foods, foodMap, run, onMov
       <div class="mt-2 flex flex-wrap items-center justify-between gap-3 border-t border-hairline pt-3">
         <select class="input w-auto min-w-44 flex-1 sm:flex-none" aria-label="Food to add" value={adding} onChange={(e) => addItem(e.currentTarget.value)}>
           <option value="">Add a food…</option>
-          {foods.map((f) => <option key={f.id} value={f.id}>{f.name} · {g(f.protein_g)} g</option>)}
-          <option value={NEW_FOOD}>Create a new food…</option>
+          {foods.length > 0 && (
+            <optgroup label="Your foods">
+              {foods.map((f) => <option key={f.id} value={f.id}>{f.name} · {g(f.protein_g)} g</option>)}
+            </optgroup>
+          )}
+          {shared.length > 0 && (
+            <optgroup label="Shared list">
+              {shared.map((f) => <option key={f.name} value={SHARED + f.name}>{f.name} · {f.serving} · {g(f.protein_g)} g</option>)}
+            </optgroup>
+          )}
+          <option value={NEW_FOOD}>Create your own food…</option>
         </select>
         <p class="num text-sm text-ink">
           {columns.map((v) => `${v ? `${v}: ` : ''}${g(proteinOf(itemsFor(meal, v), foodMap))} g`).join('  ·  ')}
@@ -328,7 +341,9 @@ function MealCard({ meal, setMeal, variants, columns, foods, foodMap, run, onMov
   );
 }
 
-function FoodsTab({ foods, setFoods, run }: { foods: Food[]; setFoods: (foods: Food[]) => void; run: Run }) {
+type FoodsProps = { foods: Food[]; setFoods: (foods: Food[]) => void; shared: CatalogFood[]; adopt: Adopt; dietLabel: string | null; run: Run };
+
+function FoodsTab({ foods, setFoods, shared, adopt, dietLabel, run }: FoodsProps) {
   const [name, setName] = useState('');
   const [serving, setServing] = useState('');
   const [protein, setProtein] = useState('');
@@ -358,9 +373,30 @@ function FoodsTab({ foods, setFoods, run }: { foods: Food[]; setFoods: (foods: F
       setFoods(foods.filter((f) => f.id !== food.id));
     });
 
+  const addShared = (name: string) => {
+    const food = shared.find((f) => f.name === name);
+    if (food) run(async () => void (await adopt(food)));
+  };
+
   return (
     <>
-      <Card title="Add a food">
+      <Card title="Add from the shared list">
+        <p class="mb-3 text-sm">Protein-rich foods common in India and elsewhere{dietLabel ? `, filtered for a ${dietLabel.toLowerCase()} diet` : ''}. Adding one copies it into your foods, where you can change it.</p>
+        <select class="input" aria-label="Food from the shared list" value="" disabled={!shared.length} onChange={(e) => e.currentTarget.value && addShared(e.currentTarget.value)}>
+          <option value="">{shared.length ? `Choose one of ${shared.length} foods…` : 'Every shared food is already in your list'}</option>
+          {FOOD_CATEGORIES.map((category) => {
+            const inCategory = shared.filter((f) => f.category === category);
+            return inCategory.length ? (
+              <optgroup key={category} label={category}>
+                {inCategory.map((f) => <option key={f.name} value={f.name}>{f.name} · {f.serving} · {g(f.protein_g)} g</option>)}
+              </optgroup>
+            ) : null;
+          })}
+        </select>
+      </Card>
+
+      <Card title="Add your own food">
+        <p class="mb-3 text-sm">Not in the shared list? Foods you add here are yours alone.</p>
         <form onSubmit={add} class="grid grid-cols-2 gap-2 sm:grid-cols-[1fr_10rem_7rem_auto]">
           <input class="input col-span-2 sm:col-span-1" aria-label="Food name" placeholder="Food, e.g. Greek yoghurt" required value={name} onInput={(e) => setName(e.currentTarget.value)} />
           <input class="input" aria-label="Serving size" placeholder="Serving, e.g. 100 g" value={serving} onInput={(e) => setServing(e.currentTarget.value)} />
@@ -370,7 +406,7 @@ function FoodsTab({ foods, setFoods, run }: { foods: Food[]; setFoods: (foods: F
       </Card>
 
       <Card title={`Your foods (${foods.length})`}>
-        {foods.length === 0 && <Empty>Nothing here yet. Add the foods you actually eat, with protein per serving.</Empty>}
+        {foods.length === 0 && <Empty>Nothing here yet. Pick foods from the shared list or add your own, with protein per serving.</Empty>}
         <ul class="divide-y divide-hairline">
           {foods.map((food) => (
             <li key={food.id} class="grid grid-cols-[1fr_5.5rem_2rem] items-center gap-2 py-2.5 sm:grid-cols-[1fr_10rem_5.5rem_auto_2rem]">

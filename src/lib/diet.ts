@@ -1,3 +1,4 @@
+import type { CatalogFood } from '../data/food-catalog';
 import { must, supabase } from './supabase';
 import type { DietPlan, Food, Meal, MealItem } from './types';
 
@@ -21,8 +22,17 @@ export async function fetchPlans(): Promise<DietPlan[]> {
   return plans.map(sortPlan);
 }
 
+const FOOD_COLUMNS = 'id,name,serving,protein_g,is_backup';
+
 export async function fetchFoods(): Promise<Food[]> {
-  return must(await supabase.from('foods').select('id,name,serving,protein_g,is_backup').order('name')) as Food[];
+  return must(await supabase.from('foods').select(FOOD_COLUMNS).order('name')) as Food[];
+}
+
+/** Copies a food from the shared list into the account's foods, or returns the copy it already has (same name). */
+export async function addCatalogFood(food: CatalogFood, owned: Food[]): Promise<Food> {
+  const existing = owned.find((f) => f.name.toLowerCase() === food.name.toLowerCase());
+  if (existing) return existing;
+  return must(await supabase.from('foods').insert({ name: food.name, serving: food.serving, protein_g: food.protein_g }).select(FOOD_COLUMNS).single()) as Food;
 }
 
 /** Items eaten on the given variant: those tagged with it plus the untagged ones. */

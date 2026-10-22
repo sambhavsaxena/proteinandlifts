@@ -1,15 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
-import {
-  exercisesIn,
-  STARTER_DIETS,
-  STARTER_FOODS,
-  STARTER_PROGRAMS,
-  starterExercises,
-  type DietPreference,
-  type ExerciseKey,
-  type FoodKey,
-  type Goal,
-} from '../data/starter';
+import { exercisesIn, STARTER_PROGRAMS, starterExercises, type ExerciseKey, type Goal } from '../data/starter';
 import { mediaCaption } from './catalog';
 import { must } from './supabase';
 
@@ -64,49 +54,13 @@ export async function seedProgram(db: SupabaseClient, goal: Goal): Promise<void>
 }
 
 /**
- * Adds a starter diet as a new plan and returns its id. Foods the account
- * already has (matched by name) are reused rather than duplicated, so this is
- * safe to run on an account that is already in use.
+ * Builds a new account's plan from its onboarding answers: the training
+ * programme for the goal and one empty diet plan for the user to fill. Returns
+ * the diet plan's id.
  */
-export async function addDietTemplate(db: SupabaseClient, preference: DietPreference): Promise<string> {
-  const diet = STARTER_DIETS[preference];
-  const wanted = [...new Set<FoodKey>([...diet.meals.flatMap((m) => m.items.map(([food]) => food)), diet.backup, ...diet.pantry])];
-
-  const existing = must(await db.from('foods').select('id,name')) as { id: string; name: string }[];
-  const byName = new Map(existing.map((f) => [f.name.toLowerCase(), f.id]));
-  const foodIds = {} as Record<FoodKey, string>;
-  const missing: FoodKey[] = [];
-  for (const key of wanted) {
-    const found = byName.get(STARTER_FOODS[key].name.toLowerCase());
-    foodIds[key] = found ?? uuid();
-    if (!found) missing.push(key);
-  }
-  if (missing.length) {
-    must(await db.from('foods').insert(missing.map((key) => ({ ...STARTER_FOODS[key], id: foodIds[key], is_backup: key === diet.backup }))));
-  }
-
-  const planId = uuid();
-  must(await db.from('diet_plans').insert({ id: planId, name: diet.planName, variants: diet.variants }));
-  const meals = diet.meals.map((m, position) => ({ ...m, id: uuid(), position }));
-  must(await db.from('meals').insert(meals.map((m) => ({ id: m.id, plan_id: planId, name: m.name, position: m.position }))));
-  must(
-    await db.from('meal_items').insert(
-      meals.flatMap((m) =>
-        m.items.map(([food, qty, variant], position) => ({
-          meal_id: m.id,
-          food_id: foodIds[food],
-          qty,
-          variant: variant === undefined ? null : diet.variants[variant],
-          position,
-        })),
-      ),
-    ),
-  );
-  return planId;
-}
-
-/** Builds a new account's plan from its onboarding answers; returns the diet plan id. */
-export async function seedStarter(db: SupabaseClient, goal: Goal, preference: DietPreference): Promise<string> {
+export async function seedStarter(db: SupabaseClient, goal: Goal): Promise<string> {
   await seedProgram(db, goal);
-  return addDietTemplate(db, preference);
+  const planId = uuid();
+  must(await db.from('diet_plans').insert({ id: planId, name: 'My plan' }));
+  return planId;
 }

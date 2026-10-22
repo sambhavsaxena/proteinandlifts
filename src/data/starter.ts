@@ -1,8 +1,9 @@
 import starterExercises from './starter-exercises.json';
 
-// The starter plans a new account is built from during onboarding: one
-// training programme per goal and one diet per way of eating. Everything here
-// becomes ordinary user data once inserted, so it can be edited or deleted.
+// The starter training programme a new account is built from during
+// onboarding, one per goal. It becomes ordinary user data once inserted, so it
+// can be edited or deleted. Meals are not seeded: users build their own from
+// the shared food list (food-catalog.ts) and foods of their own.
 
 export type ExerciseKey = keyof typeof starterExercises;
 export type Goal = 'gain' | 'lose' | 'maintain';
@@ -90,139 +91,16 @@ export function exercisesIn(program: StarterProgram): ExerciseKey[] {
 
 // ---------------------------------------------------------------------- diet
 
-// Protein per serving is a standard approximation — edit it to match the label
-// on what you actually buy.
-export const STARTER_FOODS = {
-  milk: { name: 'Whole milk', serving: '250 ml', protein_g: 8 },
-  soyMilk: { name: 'Soy milk', serving: '250 ml', protein_g: 7 },
-  sattu: { name: 'Sattu', serving: '1 tbsp', protein_g: 1.75 },
-  banana: { name: 'Banana', serving: '1 medium', protein_g: 1 },
-  jaggery: { name: 'Jaggery', serving: '1 tsp', protein_g: 0 },
-  peanutButter: { name: 'Peanut butter', serving: '1 tbsp', protein_g: 4 },
-  egg: { name: 'Egg', serving: '1 whole', protein_g: 6.25 },
-  paneer: { name: 'Paneer', serving: '100 g', protein_g: 18 },
-  tofu: { name: 'Tofu', serving: '100 g', protein_g: 13 },
-  soyaChunks: { name: 'Soya chunks', serving: '30 g dry', protein_g: 15.5 },
-  chicken: { name: 'Chicken breast', serving: '100 g cooked', protein_g: 30 },
-  roti: { name: 'Roti', serving: '1 medium', protein_g: 3 },
-  bread: { name: 'Bread', serving: '1 slice', protein_g: 3 },
-  rice: { name: 'Cooked rice', serving: '1 cup', protein_g: 4 },
-  dal: { name: 'Dal', serving: '1 bowl', protein_g: 7 },
-  rajma: { name: 'Rajma or chole', serving: '1 bowl', protein_g: 8 },
-  sabzi: { name: 'Sabzi', serving: '1 bowl', protein_g: 2 },
-  curd: { name: 'Curd', serving: '1 bowl', protein_g: 5 },
-  chana: { name: 'Roasted chana', serving: '40 g', protein_g: 8.5 },
-  peanuts: { name: 'Peanuts', serving: '1 handful (30 g)', protein_g: 7 },
-  dates: { name: 'Dates', serving: '2 pieces', protein_g: 0.5 },
-  whey: { name: 'Whey protein', serving: '1 scoop', protein_g: 24 },
-  plantProtein: { name: 'Plant protein powder', serving: '1 scoop', protein_g: 20 },
-} satisfies Record<string, { name: string; serving: string; protein_g: number }>;
-
-export type FoodKey = keyof typeof STARTER_FOODS;
-
-/** [food, quantity, variant index (omit = every day)] */
-type StarterItem = [FoodKey, number, number?];
-type StarterMeal = { name: string; items: StarterItem[] };
-
-export type StarterDiet = {
-  label: string;
-  blurb: string;
-  planName: string;
-  /** Alternate day types within the plan, e.g. an egg day and a no-egg day. */
-  variants: string[];
-  /** Offered as a one-tap top-up when the day ends short. */
-  backup: FoodKey;
-  /** Foods worth having in the list even though no meal uses them. */
-  pantry: FoodKey[];
-  meals: StarterMeal[];
-};
-
-const DAIRY_SHAKE: StarterMeal = { name: 'Morning shake (pre-workout)', items: [['milk', 1], ['sattu', 4], ['banana', 1], ['jaggery', 1], ['peanutButter', 1]] };
-const EVENING: StarterMeal = { name: 'Evening', items: [['chana', 1], ['peanuts', 1], ['dates', 1]] };
-const DAL_LUNCH: StarterMeal = { name: 'Lunch', items: [['roti', 3], ['dal', 1.5], ['sabzi', 1], ['curd', 1]] };
-const BEDTIME_MILK: StarterMeal = { name: 'Bedtime', items: [['milk', 1]] };
-
-export const STARTER_DIETS: Record<DietPreference, StarterDiet> = {
-  vegan: {
-    label: 'Vegan',
-    blurb: 'No animal products. Soy milk, tofu, soya chunks, dal and legumes.',
-    planName: 'Vegan · 120 g',
-    variants: [],
-    backup: 'plantProtein',
-    pantry: ['rice', 'bread'],
-    meals: [
-      { name: 'Morning shake (pre-workout)', items: [['soyMilk', 1], ['sattu', 4], ['banana', 1], ['jaggery', 1], ['peanutButter', 1]] },
-      { name: 'Breakfast (post-workout)', items: [['tofu', 1.5], ['roti', 2]] },
-      { name: 'Lunch', items: [['roti', 3], ['dal', 1.5], ['soyaChunks', 1], ['sabzi', 1]] },
-      EVENING,
-      { name: 'Dinner', items: [['roti', 3], ['rajma', 1], ['sabzi', 1]] },
-      { name: 'Bedtime', items: [['soyMilk', 1]] },
-    ],
-  },
-  vegetarian: {
-    label: 'Vegetarian',
-    blurb: 'Dairy but no eggs. Milk, paneer, curd, dal and sattu.',
-    planName: 'Vegetarian · 120 g',
-    variants: [],
-    backup: 'whey',
-    pantry: ['rice', 'bread'],
-    meals: [
-      DAIRY_SHAKE,
-      { name: 'Breakfast (post-workout)', items: [['paneer', 1], ['roti', 2]] },
-      DAL_LUNCH,
-      EVENING,
-      { name: 'Dinner', items: [['roti', 3], ['dal', 1.5], ['sabzi', 1], ['curd', 1]] },
-      BEDTIME_MILK,
-    ],
-  },
-  eggetarian: {
-    label: 'Eggetarian',
-    blurb: 'Vegetarian plus eggs, with a no-egg day variant built around paneer.',
-    planName: 'Eggetarian · 120 g',
-    variants: ['Egg day', 'No-egg day'],
-    backup: 'whey',
-    pantry: ['rice', 'bread'],
-    meals: [
-      DAIRY_SHAKE,
-      { name: 'Breakfast (post-workout)', items: [['egg', 4, 0], ['paneer', 1, 1], ['roti', 2]] },
-      DAL_LUNCH,
-      EVENING,
-      { name: 'Dinner', items: [['roti', 3], ['dal', 1, 0], ['dal', 1.5, 1], ['sabzi', 1], ['curd', 1]] },
-      BEDTIME_MILK,
-    ],
-  },
-  non_vegetarian: {
-    label: 'Non-vegetarian',
-    blurb: 'Everything. Eggs at breakfast, chicken at lunch, dal at dinner.',
-    planName: 'Non-vegetarian · 125 g',
-    variants: [],
-    backup: 'whey',
-    pantry: ['rice', 'bread', 'paneer'],
-    meals: [
-      DAIRY_SHAKE,
-      { name: 'Breakfast (post-workout)', items: [['egg', 3], ['roti', 2]] },
-      { name: 'Lunch', items: [['chicken', 1], ['roti', 2], ['sabzi', 1], ['curd', 1]] },
-      EVENING,
-      { name: 'Dinner', items: [['roti', 2], ['dal', 1], ['sabzi', 1]] },
-      BEDTIME_MILK,
-    ],
-  },
+// How someone eats. It decides which shared foods are offered (see
+// food-catalog.ts); meals themselves are left for the user to build.
+export const DIET_OPTIONS: Record<DietPreference, { label: string; blurb: string }> = {
+  vegan: { label: 'Vegan', blurb: 'No animal products. Soy, pulses, nuts and seeds.' },
+  vegetarian: { label: 'Vegetarian', blurb: 'Dairy but no eggs, meat or fish.' },
+  eggetarian: { label: 'Eggetarian', blurb: 'Vegetarian plus eggs.' },
+  non_vegetarian: { label: 'Non-vegetarian', blurb: 'Everything, including meat and fish.' },
 };
 
 export const DIET_ORDER: DietPreference[] = ['vegan', 'vegetarian', 'eggetarian', 'non_vegetarian'];
-
-const round1 = (n: number) => Math.round(n * 10) / 10;
-
-/** Protein in one meal on the given variant (index into the diet's variants). */
-export function mealProtein(meal: StarterMeal, variant = 0): number {
-  return round1(meal.items.filter(([, , v]) => v === undefined || v === variant).reduce((sum, [food, qty]) => sum + qty * STARTER_FOODS[food].protein_g, 0));
-}
-
-/** Daily protein per variant; a diet without variants has a single total. */
-export function dietTotals(diet: StarterDiet): number[] {
-  const columns = diet.variants.length ? diet.variants.map((_, i) => i) : [0];
-  return columns.map((v) => round1(diet.meals.reduce((sum, m) => sum + mealProtein(m, v), 0)));
-}
 
 // A common range for people who lift is 1.6–2.2 g of protein per kg of body
 // weight; the suggestion takes the middle of it against the target weight.

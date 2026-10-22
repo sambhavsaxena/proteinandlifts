@@ -17,7 +17,7 @@ directly and row-level security keeps each account's rows private.
 | `src/pages/` | Public pages (`/`, legal, 404/500), auth pages, and the `/app/*` shells |
 | `src/app/` | The signed-in screens (Preact): Today, Workouts, Session, Diet, Reports, Settings |
 | `src/lib/` | Supabase client, date helpers, diet maths, photo upload, starter-plan seeding |
-| `src/data/` | Starter plans: one training programme per goal, one diet per way of eating |
+| `src/data/` | Starter training programme per goal (`starter.ts`) and the shared food list (`food-catalog.ts`) |
 | `scripts/` | `build-exercise-catalog.mjs` (exercise catalog and photos) and `build-icons.mjs` (favicon, PWA icons, social card from `scripts/brand/trainory.svg`) |
 | `public/exercises/`, `public/exercise-catalog.json` | The full exercise catalog and its photos ([free-exercise-db](https://github.com/yuhonas/free-exercise-db), public domain) |
 | `supabase/migrations/` | Database schema, RLS policies and the storage bucket |
@@ -35,7 +35,8 @@ npm run dev                   # http://localhost:4321
 
 Local sign-ups need no email confirmation. A new account goes through
 onboarding (weight, height, target weight, diet) and is seeded with the
-training programme for its goal and the diet for its way of eating.
+training programme for its goal and one empty diet plan. Meals are built by the
+user from the shared food list (filtered by their diet) and foods of their own.
 
 ## Exercise catalog
 
