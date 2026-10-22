@@ -2,7 +2,7 @@
 import Layout from '../layouts/Layout.astro';
 import { readFileSync } from 'node:fs';
 import { FOOD_CATALOG, FOOD_CATEGORIES } from '../data/food-catalog';
-import { STARTER_PROGRAMS, starterExercises } from '../data/starter';
+import { mealProtein, STARTER_DIETS, STARTER_PROGRAMS, starterExercises } from '../data/starter';
 import { WEEKDAYS } from '../lib/dates';
 
 const round1 = (n: number) => Math.round(n * 10) / 10;
@@ -24,15 +24,8 @@ const catalogCount = `${Math.floor(catalogSize / 10) * 10}+`;
 
 const gallery = (['squat', 'bench', 'latPulldown', 'ohp'] as const).map((key) => starterExercises[key]);
 
-// Hero preview: an example day built from shared foods, three meals already logged.
-const food = (name: string) => FOOD_CATALOG.find((f) => f.name === name)!;
-const meal = (name: string, items: [string, number][]) => ({ name, protein: round1(items.reduce((sum, [n, qty]) => sum + qty * food(n).protein_g, 0)) });
-const previewMeals = [
-  meal('Breakfast', [['Egg', 3], ['Roti', 2]]),
-  meal('Lunch', [['Dal', 1.5], ['Roti', 3], ['Curd', 1]]),
-  meal('Snack', [['Roasted chana', 1], ['Peanuts', 1]]),
-  meal('Dinner', [['Paneer', 1], ['Roti', 2]]),
-].map((m, i) => ({ ...m, done: i < 3 }));
+// Hero preview: the eggetarian starter day, three meals already logged.
+const previewMeals = STARTER_DIETS.eggetarian.meals.map((m, i) => ({ name: m.name, protein: mealProtein(m), done: i < 3 }));
 const previewTotal = round1(previewMeals.filter((m) => m.done).reduce((sum, m) => sum + m.protein, 0));
 const RING = 2 * Math.PI * 61;
 
@@ -70,7 +63,7 @@ const faqs = [
   },
   {
     q: 'Does it work for vegans and vegetarians?',
-    a: 'Yes. At sign-up you choose vegan, vegetarian, eggetarian or non-vegetarian, and the shared food list only offers foods that fit: soy milk, tofu, tempeh and soya chunks for vegans, paneer, curd and Greek yogurt for vegetarians, eggs, chicken or fish if you eat them. You build your own meals from it, and anything missing can be added as a food of your own.',
+    a: 'Yes. At sign-up you choose vegan, vegetarian, eggetarian or non-vegetarian, and the shared food list only offers foods that fit: soy milk, tofu, tempeh and soya chunks for vegans, paneer, curd and Greek yogurt for vegetarians, eggs, chicken or fish if you eat them. You start with four everyday meals built from it, such as dal, roti and curd for lunch, and anything missing can be added as a food of your own.',
   },
   {
     q: 'Is Trainory free?',
@@ -117,7 +110,7 @@ const jsonLd = {
         <a href="/signup/" class="btn btn-primary btn-pill">Sign up free</a>
         <a href="/login/" class="btn btn-pill">Log in</a>
       </div>
-      <p class="mt-4 text-sm text-mute">Starts with a training week matched to your goal and a shared list of protein-rich foods for how you eat. Change anything.</p>
+      <p class="mt-4 text-sm text-mute">Starts with a training week matched to your goal and four everyday meals for how you eat. Change anything.</p>
     </div>
 
     <div class="card mx-auto w-full max-w-sm" aria-label="Preview of the Today screen">
@@ -185,7 +178,7 @@ const jsonLd = {
     <div class="mx-auto w-full max-w-5xl px-4 py-16">
       <p class="eyebrow mb-3">Included when you sign up</p>
       <h2 class="text-3xl tracking-tight">A starting plan built from four answers</h2>
-      <p class="mt-3 max-w-2xl leading-7">Tell the app your weight, height, target weight and how you eat. It picks a training week for your goal and suggests a protein target, and you build your meals from a shared list of foods that suit your diet. It is ordinary data in your account, so rename it, rearrange it or delete it.</p>
+      <p class="mt-3 max-w-2xl leading-7">Tell the app your weight, height, target weight and how you eat. It picks a training week for your goal, four everyday meals for your diet from a shared list of protein-rich foods, and suggests a protein target. It is ordinary data in your account, so rename it, rearrange it or delete it.</p>
 
       <ul class="mt-8 grid grid-cols-2 gap-3 md:grid-cols-4" data-zoom-group>
         {gallery.map((e) => (

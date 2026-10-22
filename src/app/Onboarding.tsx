@@ -1,6 +1,5 @@
 import { useState } from 'preact/hooks';
-import { FOOD_CATALOG, fitsDiet } from '../data/food-catalog';
-import { DIET_OPTIONS, DIET_ORDER, goalFor, STARTER_PROGRAMS, suggestedProtein, type DietPreference } from '../data/starter';
+import { DIET_OPTIONS, DIET_ORDER, dietTotal, goalFor, mealProtein, STARTER_DIETS, STARTER_PROGRAMS, suggestedProtein, type DietPreference } from '../data/starter';
 import { WEEKDAYS_LONG } from '../lib/dates';
 import { cx, ErrorNote, Field, g } from './ui';
 
@@ -125,7 +124,7 @@ type ReviewProps = { weightKg: number; targetKg: number; diet: DietPreference; p
 
 function Review({ weightKg, targetKg, diet, protein, suggested, onProtein }: ReviewProps) {
   const program = STARTER_PROGRAMS[goalFor(weightKg, targetKg)];
-  const foods = FOOD_CATALOG.filter((f) => fitsDiet(f, diet)).length;
+  const plan = STARTER_DIETS[diet];
 
   return (
     <>
@@ -146,7 +145,17 @@ function Review({ weightKg, targetKg, diet, protein, suggested, onProtein }: Rev
 
       <section class="card">
         <p class="eyebrow">Diet · {DIET_OPTIONS[diet].label}</p>
-        <p class="mt-2 text-sm">You start with an empty meal plan and build your own meals. Pick from {foods} protein-rich foods that suit how you eat, or add foods of your own.</p>
+        <ul class="mt-3 divide-y divide-hairline border-y border-hairline text-sm">
+          {plan.meals.map((m) => (
+            <li key={m.name} class="flex items-center justify-between gap-3 py-2">
+              <span class="min-w-0">
+                <span class="text-ink">{m.name}</span> <span class="text-mute">· {m.items.map(([food]) => food).join(', ')}</span>
+              </span>
+              <span class="num shrink-0">{g(mealProtein(m))} g</span>
+            </li>
+          ))}
+        </ul>
+        <p class="num mt-3 text-sm text-ink">Daily total: {g(dietTotal(plan))} g</p>
       </section>
 
       <section class="card">

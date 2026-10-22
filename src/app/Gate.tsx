@@ -57,7 +57,7 @@ async function buildPlan(userId: string, answers: Answers): Promise<Profile> {
   if (!claim.data) return must(await supabase.from('profiles').select('*').single()) as Profile;
 
   try {
-    const planId = await seedStarter(supabase, goal);
+    const planId = await seedStarter(supabase, goal, answers.diet);
     must(await supabase.from('weight_logs').upsert({ logged_on: today(), kg: answers.weightKg }, { onConflict: 'user_id,logged_on' }));
     const now = new Date().toISOString();
     return must(

@@ -1,9 +1,10 @@
+import { catalogFood, type FoodName } from './food-catalog';
 import starterExercises from './starter-exercises.json';
 
-// The starter training programme a new account is built from during
-// onboarding, one per goal. It becomes ordinary user data once inserted, so it
-// can be edited or deleted. Meals are not seeded: users build their own from
-// the shared food list (food-catalog.ts) and foods of their own.
+// The starter plans a new account is built from during onboarding: one
+// training programme per goal and one four-meal diet per way of eating, built
+// from the shared food list (food-catalog.ts). Everything becomes ordinary
+// user data once inserted, so it can be edited or deleted.
 
 export type ExerciseKey = keyof typeof starterExercises;
 export type Goal = 'gain' | 'lose' | 'maintain';
@@ -101,6 +102,59 @@ export const DIET_OPTIONS: Record<DietPreference, { label: string; blurb: string
 };
 
 export const DIET_ORDER: DietPreference[] = ['vegan', 'vegetarian', 'eggetarian', 'non_vegetarian'];
+
+/** [shared food, servings] */
+type StarterItem = [FoodName, number];
+export type StarterMeal = { name: string; items: StarterItem[] };
+export type StarterDiet = { planName: string; meals: StarterMeal[] };
+
+// Everyday meals for each way of eating: a protein source in every meal, with
+// common staples around it.
+const DAL_LUNCH: StarterMeal = { name: 'Lunch', items: [['Dal', 1.5], ['Roti', 3], ['Curd', 1]] };
+const NUT_SNACK: StarterMeal = { name: 'Snack', items: [['Roasted chana', 1], ['Peanuts', 1]] };
+const EGG_BREAKFAST: StarterMeal = { name: 'Breakfast', items: [['Egg', 3], ['Bread', 2]] };
+
+export const STARTER_DIETS: Record<DietPreference, StarterDiet> = {
+  vegan: {
+    planName: 'Vegan starter',
+    meals: [
+      { name: 'Breakfast', items: [['Oats', 1], ['Soy milk', 1], ['Peanut butter', 1], ['Chia seeds', 1]] },
+      { name: 'Lunch', items: [['Dal', 1.5], ['Roti', 3], ['Soya chunks', 1]] },
+      NUT_SNACK,
+      { name: 'Dinner', items: [['Tofu', 1.5], ['Roti', 2], ['Green peas', 1]] },
+    ],
+  },
+  vegetarian: {
+    planName: 'Vegetarian starter',
+    meals: [
+      { name: 'Breakfast', items: [['Whole milk', 1], ['Oats', 1], ['Peanut butter', 1]] },
+      DAL_LUNCH,
+      NUT_SNACK,
+      { name: 'Dinner', items: [['Paneer', 1], ['Roti', 2], ['Green peas', 1]] },
+    ],
+  },
+  eggetarian: {
+    planName: 'Eggetarian starter',
+    meals: [EGG_BREAKFAST, DAL_LUNCH, NUT_SNACK, { name: 'Dinner', items: [['Paneer', 1], ['Roti', 2], ['Dal', 1]] }],
+  },
+  non_vegetarian: {
+    planName: 'Non-vegetarian starter',
+    meals: [
+      EGG_BREAKFAST,
+      { name: 'Lunch', items: [['Chicken breast', 1], ['Cooked rice', 1], ['Dal', 1]] },
+      NUT_SNACK,
+      { name: 'Dinner', items: [['Rohu or catla', 1], ['Roti', 2], ['Curd', 1]] },
+    ],
+  },
+};
+
+const round1 = (n: number) => Math.round(n * 10) / 10;
+
+/** Protein in one starter meal. */
+export const mealProtein = (meal: StarterMeal) => round1(meal.items.reduce((sum, [food, qty]) => sum + qty * catalogFood(food).protein_g, 0));
+
+/** Protein in a starter diet's whole day. */
+export const dietTotal = (diet: StarterDiet) => round1(diet.meals.reduce((sum, m) => sum + mealProtein(m), 0));
 
 // A common range for people who lift is 1.6–2.2 g of protein per kg of body
 // weight; the suggestion takes the middle of it against the target weight.

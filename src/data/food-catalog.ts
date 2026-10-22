@@ -33,7 +33,7 @@ export const FOOD_CATEGORIES = [
 
 export type FoodCategory = (typeof FOOD_CATEGORIES)[number];
 
-export const FOOD_CATALOG: CatalogFood[] = [
+export const FOOD_CATALOG = [
   // Pulses & beans
   { name: 'Dal', serving: '1 bowl (150 g cooked)', protein_g: 7, category: 'Pulses & beans', source: 'plant' },
   { name: 'Lentils', serving: '1 cup (200 g cooked)', protein_g: 18, category: 'Pulses & beans', source: 'plant' },
@@ -124,7 +124,12 @@ export const FOOD_CATALOG: CatalogFood[] = [
   { name: 'Casein protein', serving: '1 scoop', protein_g: 24, category: 'Supplements', source: 'dairy' },
   { name: 'Plant protein powder', serving: '1 scoop', protein_g: 20, category: 'Supplements', source: 'plant' },
   { name: 'Protein bar', serving: '1 bar (60 g)', protein_g: 20, category: 'Supplements', source: 'dairy' },
-];
+] as const satisfies readonly CatalogFood[];
+
+export type FoodName = (typeof FOOD_CATALOG)[number]['name'];
+
+/** The shared-list entry with this name. */
+export const catalogFood = (name: FoodName): CatalogFood => FOOD_CATALOG.find((f) => f.name === name)!;
 
 const ALLOWED: Record<DietPreference, FoodSource[]> = {
   vegan: ['plant'],
