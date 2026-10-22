@@ -13,7 +13,6 @@ interface Props {
 
 const { title, description, noindex = false, app = false } = Astro.props;
 const canonical = new URL(Astro.url.pathname, Astro.site).href;
-const shouldNoindex = noindex || Astro.url.hostname.endsWith('.pages.dev');
 const path = Astro.url.pathname.endsWith('/') ? Astro.url.pathname : `${Astro.url.pathname}/`;
 const year = new Date().getFullYear();
 ---
@@ -32,21 +31,33 @@ const year = new Date().getFullYear();
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content={SITE.name} />
     <meta property="og:image" content={`https://${SITE.domain}/og.png`} />
-    {shouldNoindex && <meta name="robots" content="noindex, nofollow" />}
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    {noindex && <meta name="robots" content="noindex, nofollow" />}
+    <link rel="icon" type="image/png" sizes="48x48" href="/favicon.png" />
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
     <link rel="sitemap" href="/sitemap-index.xml" />
-    <meta name="theme-color" content="#fafafa" />
+    <meta name="theme-color" content="#f5f6f2" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#111315" media="(prefers-color-scheme: dark)" />
     <script is:inline>
       // Runs before first paint: theme, and whether a session is stored.
       (function () {
         var root = document.documentElement;
         try {
-          var theme = localStorage.getItem('pl-theme');
+          // Keys from before the rename to Trainory move over once, so nobody is signed out.
+          var keys = [];
+          for (var i = 0; i < localStorage.length; i++) keys.push(localStorage.key(i));
+          for (var j = 0; j < keys.length; j++) {
+            var old = keys[j];
+            if (old && old.indexOf('pl-') === 0) {
+              var key = 'trainory-' + old.slice(3);
+              if (localStorage.getItem(key) === null) localStorage.setItem(key, localStorage.getItem(old));
+              localStorage.removeItem(old);
+            }
+          }
+          var theme = localStorage.getItem('trainory-theme');
           if (!theme) theme = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
           root.dataset.theme = theme;
-          if (localStorage.getItem('pl-auth')) root.dataset.auth = '';
+          if (localStorage.getItem('trainory-auth')) root.dataset.auth = '';
         } catch (e) {
           root.dataset.theme = 'light';
         }
@@ -59,8 +70,8 @@ const year = new Date().getFullYear();
     <header class="sticky top-0 z-30 border-b border-hairline bg-canvas/90 backdrop-blur">
       <div class="mx-auto flex h-14 w-full max-w-5xl items-center gap-3 px-4">
         <a href={app ? '/app/' : '/'} class="flex items-center gap-2 text-[15px] font-semibold tracking-tight text-ink no-underline">
-          <svg width="22" height="22" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="currentColor"></rect><path d="M8 12v8M11 9.5v13M21 9.5v13M24 12v8M11 16h10" stroke="var(--inverse)" stroke-width="2.4" stroke-linecap="round" fill="none"></path></svg>
-          <span>{SITE.name}</span>
+          <img src="/icons/mark-64.png" width="24" height="24" alt="" />
+          <span class="text-[17px] text-accent lowercase">{SITE.name}</span>
         </a>
         {app && (
           <nav aria-label="App" class="ml-4 hidden items-center gap-1 md:flex">
@@ -110,7 +121,7 @@ const year = new Date().getFullYear();
         var root = document.documentElement;
         var next = root.dataset.theme === 'dark' ? 'light' : 'dark';
         root.dataset.theme = next;
-        try { localStorage.setItem('pl-theme', next); } catch (e) {}
+        try { localStorage.setItem('trainory-theme', next); } catch (e) {}
       });
     </script>
     <script>

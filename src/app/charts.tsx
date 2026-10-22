@@ -66,7 +66,7 @@ export function BarChart({ data, target, unit, height = 200 }: { data: DayValue[
                 {h > 0 && (
                   <path
                     d={`M${x},${y(0)} v${-(h - r)} q0,${-r} ${r},${-r} h${barW - 2 * r} q${r},0 ${r},${r} v${h - r} z`}
-                    fill="var(--ink)"
+                    fill="var(--accent)"
                     opacity={hover === null || hover === i ? 1 : 0.45}
                   />
                 )}
@@ -132,9 +132,9 @@ export function LineChart({ data, unit, height = 200 }: { data: DayValue[]; unit
             </g>
           ))}
           {hovered && <line x1={x(hovered.date)} x2={x(hovered.date)} y1={PAD.top} y2={PAD.top + innerH} stroke={AXIS} />}
-          <polyline points={data.map((d) => `${x(d.date)},${y(d.value)}`).join(' ')} fill="none" stroke="var(--ink)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" />
+          <polyline points={data.map((d) => `${x(d.date)},${y(d.value)}`).join(' ')} fill="none" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" />
           {data.map((d, i) => (
-            <circle key={d.date} cx={x(d.date)} cy={y(d.value)} r={hover === i ? 5 : 4} fill="var(--ink)" stroke="var(--elevated)" stroke-width="2" />
+            <circle key={d.date} cx={x(d.date)} cy={y(d.value)} r={hover === i ? 5 : 4} fill="var(--accent)" stroke="var(--elevated)" stroke-width="2" />
           ))}
           <text x={x(data[0].date)} y={height - 6} text-anchor="start" font-size="11" fill={AXIS}>{formatShort(data[0].date)}</text>
           {data.length > 1 && (
@@ -177,8 +177,8 @@ export function Heatmap({ days }: { days: HeatDay[] }) {
             const filled = shade(d.ratio) > 0.5;
             return (
               <g key={d.date} onMouseEnter={() => setTip(d)} onClick={() => setTip(d)}>
-                <rect x={x} y={y} width={CELL} height={CELL} rx="3" fill="var(--ink)" opacity={shade(d.ratio)} />
-                {d.trained && <circle cx={x + CELL / 2} cy={y + CELL / 2} r="2.5" fill={filled ? 'var(--inverse)' : 'var(--ink)'} />}
+                <rect x={x} y={y} width={CELL} height={CELL} rx="3" fill="var(--accent)" opacity={shade(d.ratio)} />
+                {d.trained && <circle cx={x + CELL / 2} cy={y + CELL / 2} r="2.5" fill={filled ? 'var(--inverse)' : 'var(--accent)'} />}
               </g>
             );
           })}
@@ -188,9 +188,9 @@ export function Heatmap({ days }: { days: HeatDay[] }) {
         <p class="num min-h-4 text-body">{tip ? `${formatDay(tip.date)} · ${tip.label}` : 'Hover or tap a day for details'}</p>
         <p class="flex items-center gap-1.5">
           <span>0 g</span>
-          {STEPS.map((s) => <span key={s} class="inline-block h-2.5 w-2.5 rounded-[3px] bg-ink" style={{ opacity: s }} />)}
+          {STEPS.map((s) => <span key={s} class="inline-block h-2.5 w-2.5 rounded-[3px] bg-accent" style={{ opacity: s }} />)}
           <span>target</span>
-          <span class="ml-2 inline-block h-1.5 w-1.5 rounded-full bg-ink" />
+          <span class="ml-2 inline-block h-1.5 w-1.5 rounded-full bg-accent" />
           <span>trained</span>
         </p>
       </div>

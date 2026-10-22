@@ -8,7 +8,7 @@ export const configured = Boolean(url && key);
 // The storage key is fixed so the layout's inline script can tell, before
 // first paint, whether someone is signed in.
 export const supabase: SupabaseClient = configured
-  ? createClient(url!, key!, { auth: { storageKey: 'pl-auth' } })
+  ? createClient(url!, key!, { auth: { storageKey: 'trainory-auth' } })
   : (null as unknown as SupabaseClient);
 
 /**

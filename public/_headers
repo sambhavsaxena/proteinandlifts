@@ -1,6 +1,4 @@
-# Keep the Cloudflare preview hosts out of search results; only the real
-# domain should be indexed.
-https://proteinandlifts.pages.dev/*
-  X-Robots-Tag: noindex
-https://:branch.proteinandlifts.pages.dev/*
+# Keep the Cloudflare branch and commit previews out of search results; only
+# the production host should be indexed.
+https://:branch.trainory.pages.dev/*
   X-Robots-Tag: noindex

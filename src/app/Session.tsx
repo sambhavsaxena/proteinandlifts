@@ -330,7 +330,7 @@ function RestTimer({ until, total, onChange }: { until: number; total: number; o
   const clock = `${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')}`;
   return (
     <div class="fixed inset-x-0 bottom-14 z-20 border-t border-hairline bg-elevated md:bottom-0" role="timer" aria-live="off">
-      <div class="h-0.5 bg-ink transition-[width] duration-300 ease-linear" style={{ width: `${Math.min(100, (left / total) * 100)}%` }} />
+      <div class="h-0.5 bg-accent transition-[width] duration-300 ease-linear" style={{ width: `${Math.min(100, (left / total) * 100)}%` }} />
       <div class="mx-auto flex h-14 w-full max-w-3xl items-center gap-3 px-4">
         <span class="text-sm text-mute">{left > 0 ? 'Rest' : 'Rest over'}</span>
         <span class="num text-xl font-semibold tracking-tight text-ink">{left > 0 ? clock : 'Go'}</span>

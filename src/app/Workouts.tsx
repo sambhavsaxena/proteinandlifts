@@ -253,7 +253,7 @@ function WorkoutEditor({ id }: { id: string }) {
           </select>
           <button type="button" class="btn" disabled={!adding} onClick={add}>Add</button>
         </div>
-        <a class="mt-3 inline-block text-sm text-link" href={`?catalog=1&workout=${id}`}>Or pick from the full exercise catalog</a>
+        <a class="mt-3 inline-block text-sm text-accent" href={`?catalog=1&workout=${id}`}>Or pick from the full exercise catalog</a>
       </Card>
 
       <ConfirmButton class="self-start" label="Delete workout" onConfirm={destroy} />

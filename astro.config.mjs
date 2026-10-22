@@ -11,7 +11,7 @@ const PRIVATE = /\/(app|login|signup|reset)\//;
 
 // https://astro.build/config
 export default defineConfig({
-  site: 'https://proteinandlifts.com',
+  site: 'https://trainory.pages.dev',
   vite: {
     plugins: [tailwindcss()]
   },

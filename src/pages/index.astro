@@ -45,7 +45,7 @@ const features = [
 const faqs = [
   {
     q: 'How do I track my protein intake?',
-    a: 'Write down what you eat and the grams of protein in each item, then add them up for the day. Protein & Lifts does the adding for you: you build a list of the foods you eat with protein per serving, group them into meals, and tap a meal to log it. The ring on the Today screen shows how far you are from your target.',
+    a: 'Write down what you eat and the grams of protein in each item, then add them up for the day. Trainory does the adding for you: you build a list of the foods you eat with protein per serving, group them into meals, and tap a meal to log it. The ring on the Today screen shows how far you are from your target.',
   },
   {
     q: 'How much protein do I need per day to build muscle?',
@@ -57,14 +57,14 @@ const faqs = [
   },
   {
     q: 'Is there a protein tracker without calorie counting?',
-    a: 'Yes. Protein & Lifts tracks grams of protein only. There are no calorie budgets, macro pie charts or barcode scanners, which keeps logging to a few taps a day.',
+    a: 'Yes. Trainory tracks grams of protein only. There are no calorie budgets, macro pie charts or barcode scanners, which keeps logging to a few taps a day.',
   },
   {
     q: 'Does it work for vegans and vegetarians?',
     a: 'Yes. At sign-up you choose vegan, vegetarian, eggetarian or non-vegetarian and start with a matching protein day of roughly 120 g: soy milk, tofu and soya chunks for vegans, paneer and curd for vegetarians, eggs or chicken if you eat them. Every food and meal can be changed afterwards.',
   },
   {
-    q: 'Is Protein & Lifts free?',
+    q: 'Is Trainory free?',
     a: 'Yes. Tracking protein, planning workouts, logging sessions and viewing reports are all free. You need an account so your plan and logs are saved and available on every device you sign in on.',
   },
   {
@@ -89,13 +89,13 @@ const jsonLd = {
 ---
 
 <Layout
-  title="Protein Tracker & Workout Planner — Protein & Lifts"
+  title="Protein Tracker & Workout Planner — Trainory"
   description="Free protein tracker and workout planner. Log protein in one tap, plan workouts by day with photos, and see your progress in simple reports."
 >
   <script is:inline slot="head">
     // Signed-in visitors go straight to their dashboard.
     try {
-      if (localStorage.getItem('pl-auth')) location.replace('/app/');
+      if (localStorage.getItem('trainory-auth')) location.replace('/app/');
     } catch (e) {}
   </script>
 
@@ -103,7 +103,7 @@ const jsonLd = {
     <div>
       <p class="eyebrow mb-4">Free · protein only · no calorie counting</p>
       <h1 class="text-4xl leading-[1.05] tracking-[-0.04em] sm:text-5xl">The protein tracker and workout planner that fits on one screen</h1>
-      <p class="mt-5 max-w-xl text-lg leading-7">Protein & Lifts is a free protein tracker for people who lift. Open it, see today's workout and how many grams you still need, log both in a few taps, and close it again.</p>
+      <p class="mt-5 max-w-xl text-lg leading-7">Trainory is a free protein tracker for people who lift. Open it, see today's workout and how many grams you still need, log both in a few taps, and close it again.</p>
       <div class="mt-8 flex flex-wrap gap-3">
         <a href="/signup/" class="btn btn-primary btn-pill">Sign up free</a>
         <a href="/login/" class="btn btn-pill">Log in</a>
@@ -124,7 +124,7 @@ const jsonLd = {
         <div class="relative h-[132px] w-[132px] shrink-0">
           <svg width="132" height="132" class="-rotate-90" aria-hidden="true">
             <circle cx="66" cy="66" r="61" fill="none" stroke="var(--hairline)" stroke-width="10"></circle>
-            <circle cx="66" cy="66" r="61" fill="none" stroke="var(--ink)" stroke-width="10" stroke-linecap="round" stroke-dasharray={RING} stroke-dashoffset={RING * (1 - previewTotal / 120)}></circle>
+            <circle cx="66" cy="66" r="61" fill="none" stroke="var(--accent)" stroke-width="10" stroke-linecap="round" stroke-dasharray={RING} stroke-dashoffset={RING * (1 - previewTotal / 120)}></circle>
           </svg>
           <div class="absolute inset-0 flex flex-col items-center justify-center">
             <span class="num text-3xl font-semibold tracking-tight text-ink">{previewTotal}</span>

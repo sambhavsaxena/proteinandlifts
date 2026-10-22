@@ -41,7 +41,7 @@ async function load(date: string, planId: string | null): Promise<Data> {
 
 function storedVariant(date: string, plan: DietPlan | null): string | null {
   if (!plan?.variants.length) return null;
-  const saved = localStorage.getItem(`pl-variant:${date}`) ?? localStorage.getItem('pl-variant:last');
+  const saved = localStorage.getItem(`trainory-variant:${date}`) ?? localStorage.getItem('trainory-variant:last');
   return saved && plan.variants.includes(saved) ? saved : plan.variants[0];
 }
 
@@ -101,8 +101,8 @@ function TodayScreen({ profile }: Ctx) {
             variant={variant}
             onVariant={(v) => {
               setVariant(v);
-              localStorage.setItem(`pl-variant:${date}`, v);
-              localStorage.setItem('pl-variant:last', v);
+              localStorage.setItem(`trainory-variant:${date}`, v);
+              localStorage.setItem('trainory-variant:last', v);
             }}
             setLogs={(logs) => setData({ ...data, logs })}
             run={run}

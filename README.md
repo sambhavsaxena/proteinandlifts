@@ -1,6 +1,10 @@
-# Protein & Lifts
+# Trainory
 
-Protein tracker and workout planner — https://proteinandlifts.com
+Protein tracker and workout planner — https://trainory.pages.dev
+
+The website for Trainory. The iOS/Android app lives in
+[trainory-app](https://github.com/sambhavsaxena/trainory-app) and shares this
+Supabase project, so accounts and data are the same on both.
 
 Astro (static output) + Tailwind 4 + Preact islands, with Supabase for auth,
 data and photo storage. There is no server code: the browser talks to Supabase
@@ -14,7 +18,7 @@ directly and row-level security keeps each account's rows private.
 | `src/app/` | The signed-in screens (Preact): Today, Workouts, Session, Diet, Reports, Settings |
 | `src/lib/` | Supabase client, date helpers, diet maths, photo upload, starter-plan seeding |
 | `src/data/` | Starter plans: one training programme per goal, one diet per way of eating |
-| `scripts/` | `build-exercise-catalog.mjs`, which regenerates the exercise catalog and photos |
+| `scripts/` | `build-exercise-catalog.mjs` (exercise catalog and photos) and `build-icons.mjs` (favicon, PWA icons, social card from `scripts/brand/trainory.svg`) |
 | `public/exercises/`, `public/exercise-catalog.json` | The full exercise catalog and its photos ([free-exercise-db](https://github.com/yuhonas/free-exercise-db), public domain) |
 | `supabase/migrations/` | Database schema, RLS policies and the storage bucket |
 
@@ -56,18 +60,18 @@ node ~/.claude/skills/create-saas/verify.mjs --keyword "protein tracker"
 
 ## Environments
 
-- `.env` holds the cloud Supabase project (`proteinandlifts`, ref `hyohztyiyhkokyleleuc`) and is used by `npm run dev` and `npm run build` alike.
+- `.env` holds the cloud Supabase project (`trainory`, ref `hyohztyiyhkokyleleuc`) and is used by `npm run dev` and `npm run build` alike.
 - `.env.supabase-local` holds the local stack's URL and key. Copy it to `.env.local` to develop against `supabase start` instead; `.env.local` wins over `.env`.
 
 ## Deploying
 
-Hosted on Cloudflare Pages, project `proteinandlifts` (https://proteinandlifts.pages.dev).
+Hosted on Cloudflare Pages, project `trainory` (https://trainory.pages.dev).
 
 ```sh
 npm run deploy                # astro build && wrangler pages deploy dist
 ```
 
 - The Supabase URL and key are baked into the bundle at build time.
-- `public/_headers` sends `X-Robots-Tag: noindex` on the `*.pages.dev` hosts so only the real domain is indexed.
+- `public/_headers` sends `X-Robots-Tag: noindex` on branch and commit previews (`*.trainory.pages.dev`) so only the production host is indexed. If a custom domain is added, update `site` in `astro.config.mjs`, `SITE.domain`, `robots.txt`, and add `trainory.pages.dev` to `_headers`.
 - Schema changes go in a new file under `supabase/migrations/`, applied with `supabase db push` after `supabase link --project-ref hyohztyiyhkokyleleuc`.
 - In the Supabase dashboard (Authentication → URL Configuration) the Site URL must be the live origin, with `<origin>/app/` and `<origin>/reset/` as redirect URLs. Configure custom SMTP before opening sign-ups: the built-in mailer is rate limited.

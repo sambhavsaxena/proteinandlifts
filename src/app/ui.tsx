@@ -132,7 +132,7 @@ export function Ring({ value, max, size = 132, children }: { value: number; max:
           cy={size / 2}
           r={r}
           fill="none"
-          stroke={pct >= 1 ? 'var(--good)' : 'var(--ink)'}
+          stroke={pct >= 1 ? 'var(--good)' : 'var(--accent)'}
           stroke-width={stroke}
           stroke-linecap="round"
           stroke-dasharray={c}

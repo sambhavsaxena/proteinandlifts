@@ -1,6 +1,6 @@
 export const SITE = {
-  name: 'Protein & Lifts',
-  domain: 'proteinandlifts.com',
+  name: 'Trainory',
+  domain: 'trainory.pages.dev',
   email: 'outreach@mail.unchainedin.app',
   creator: 'Sambhav Saxena',
 };

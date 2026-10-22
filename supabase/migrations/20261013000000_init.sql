@@ -1,4 +1,4 @@
--- Protein & Lifts schema. Every row is owned by one user; row-level security
+-- Trainory schema. Every row is owned by one user; row-level security
 -- is the only thing between the public API key and the data.
 
 create table public.profiles (

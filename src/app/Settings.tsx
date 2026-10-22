@@ -30,7 +30,7 @@ function SettingsScreen({ userId, email, profile, saveProfile }: Ctx) {
       for (const table of TABLES) dump[table] = must(await supabase.from(table).select('*'));
       const a = document.createElement('a');
       a.href = URL.createObjectURL(new Blob([JSON.stringify(dump, null, 2)], { type: 'application/json' }));
-      a.download = `protein-and-lifts-${today()}.json`;
+      a.download = `trainory-${today()}.json`;
       a.click();
       URL.revokeObjectURL(a.href);
     });

@@ -63,7 +63,7 @@ export function Onboarding({ onSubmit }: { onSubmit: (answers: Answers) => Promi
         <p class="eyebrow">Step {step + 1} of {STEPS.length}</p>
         <h1 class="mt-1 text-2xl tracking-tight">{step === 0 ? 'First, a few numbers' : step === 1 ? 'How do you eat?' : 'Your starting plan'}</h1>
         <div class="mt-4 flex gap-1.5" aria-hidden="true">
-          {STEPS.map((s, i) => <span key={s} class={cx('h-1 flex-1 rounded-full', i <= step ? 'bg-ink' : 'bg-hairline')} />)}
+          {STEPS.map((s, i) => <span key={s} class={cx('h-1 flex-1 rounded-full', i <= step ? 'bg-accent' : 'bg-hairline')} />)}
         </div>
       </div>
 
@@ -97,7 +97,7 @@ export function Onboarding({ onSubmit }: { onSubmit: (answers: Answers) => Promi
                 role="radio"
                 aria-checked={diet === key}
                 onClick={() => setDiet(key)}
-                class="card cursor-pointer text-left transition-colors hover:border-mute aria-checked:border-ink aria-checked:ring-1 aria-checked:ring-ink"
+                class="card cursor-pointer text-left transition-colors hover:border-mute aria-checked:border-accent aria-checked:ring-1 aria-checked:ring-accent"
               >
                 <span class="flex items-baseline justify-between gap-3">
                   <span class="font-semibold tracking-tight text-ink">{option.label}</span>

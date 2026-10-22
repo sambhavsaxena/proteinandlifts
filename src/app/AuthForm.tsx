@@ -89,13 +89,13 @@ export default function AuthForm({ mode }: { mode: Mode }) {
       </button>
       {mode === 'login' && (
         <p class="flex flex-wrap justify-between gap-2 text-sm">
-          <a href="/signup/" class="text-link">Create an account</a>
-          <button type="button" class="cursor-pointer text-link" onClick={sendReset}>Forgot password?</button>
+          <a href="/signup/" class="text-accent">Create an account</a>
+          <button type="button" class="cursor-pointer text-accent" onClick={sendReset}>Forgot password?</button>
         </p>
       )}
       {mode === 'signup' && (
         <p class="text-sm">
-          Already have an account? <a href="/login/" class="text-link">Log in</a>
+          Already have an account? <a href="/login/" class="text-accent">Log in</a>
         </p>
       )}
     </form>
