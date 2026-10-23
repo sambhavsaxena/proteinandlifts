@@ -1,10 +1,14 @@
 import { useEffect, useMemo, useState } from 'preact/hooks';
 import { addDays, formatDay, isIsoDay, today, weekdayOf } from '../lib/dates';
-import { describeItems, fetchFoods, fetchPlan, itemsFor, proteinOf, round1 } from '../lib/diet';
+import { catalogFoodsFor, type CatalogFood } from '../data/food-catalog';
+import type { DietPreference } from '../data/starter';
+import { caloriesOf, describeItems, fetchFoods, fetchPlan, intakeFromFood, itemsFor, proteinOf, round1, sumCalories } from '../lib/diet';
+import type { PickerFood } from '../lib/food-search';
 import { must, supabase } from '../lib/supabase';
 import type { DietPlan, Food, IntakeLog, Meal, ScheduleRow, WeightLog, WorkoutSession } from '../lib/types';
 import { Gate, type Ctx } from './Gate';
-import { Card, cx, Empty, ErrorNote, g, IconButton, Loading, Page, param, Ring, Segmented } from './ui';
+import { FoodPicker } from './FoodPicker';
+import { Card, cx, Empty, ErrorNote, g, IconButton, kcal, Loading, Page, param, Ring, Segmented } from './ui';
 
 type WorkoutSummary = { id: string; name: string; workout_exercises: { count: number }[] };
 type SessionSummary = WorkoutSession & { set_logs: { count: number }[] };
@@ -24,7 +28,6 @@ const EVENING_HOUR = 18;
 
 /** What was actually eaten, which can differ from the plan's current variant. */
 const describeLog = (l: IntakeLog) => (l.qty === 1 ? l.food_name : `${l.qty} × ${l.food_name}`);
-const CUSTOM = 'custom';
 
 async function load(date: string, planId: string | null): Promise<Data> {
   const [workouts, schedule, sessions, plan, foods, logs, weight] = await Promise.all([
@@ -98,6 +101,7 @@ function TodayScreen({ profile }: Ctx) {
             data={data}
             target={profile.protein_target_g}
             gapAlert={profile.gap_alert_g}
+            preference={profile.diet_preference}
             variant={variant}
             onVariant={(v) => {
               setVariant(v);
@@ -180,16 +184,20 @@ type ProteinProps = {
   data: Data;
   target: number;
   gapAlert: number;
+  preference: DietPreference | null;
   variant: string | null;
   onVariant: (v: string) => void;
   setLogs: (logs: IntakeLog[]) => void;
   run: Run;
 };
 
-function ProteinCard({ date, isToday, data, target, gapAlert, variant, onVariant, setLogs, run }: ProteinProps) {
+function ProteinCard({ date, isToday, data, target, gapAlert, preference, variant, onVariant, setLogs, run }: ProteinProps) {
   const { plan, logs } = data;
   const foods = useMemo(() => new Map(data.foods.map((f) => [f.id, f])), [data.foods]);
+  // Shared foods suited to the diet that are not in the account's list; logged by name, not copied.
+  const shared = useMemo(() => catalogFoodsFor(preference, data.foods.map((f) => f.name)), [preference, data.foods]);
   const total = round1(logs.reduce((sum, l) => sum + l.protein_g, 0));
+  const calories = sumCalories(logs);
   const remaining = round1(Math.max(target - total, 0));
   const extras = logs.filter((l) => !l.meal_name);
   const showGap = isToday && new Date().getHours() >= EVENING_HOUR && remaining >= gapAlert;
@@ -201,17 +209,13 @@ function ProteinCard({ date, isToday, data, target, gapAlert, variant, onVariant
       setLogs([...logs, ...added]);
     });
 
-  const logFood = (food: Food, qty: number, mealName: string | null = null) =>
-    insert([{ food_id: food.id, food_name: food.name, qty, protein_g: round1(qty * food.protein_g), meal_name: mealName }]);
+  const logFood = (food: PickerFood | Food, qty: number) => insert([intakeFromFood({ ...food, id: 'shared' in food && food.shared ? null : food.id }, qty)]);
 
   const logMeal = (meal: Meal) =>
     insert(
       itemsFor(meal, variant)
         .filter((i) => foods.has(i.food_id))
-        .map((i) => {
-          const food = foods.get(i.food_id)!;
-          return { food_id: food.id, food_name: food.name, qty: i.qty, protein_g: round1(i.qty * food.protein_g), meal_name: meal.name };
-        }),
+        .map((i) => intakeFromFood(foods.get(i.food_id)!, i.qty, meal.name)),
     );
 
   const undoMeal = (meal: Meal) =>
@@ -235,7 +239,7 @@ function ProteinCard({ date, isToday, data, target, gapAlert, variant, onVariant
         </Ring>
         <div class="min-w-0">
           <p class="text-lg font-semibold tracking-tight text-ink">{remaining === 0 ? 'Target hit' : `${g(remaining)} g to go`}</p>
-          <p class="text-sm text-mute">{plan ? plan.name : 'No diet plan selected'}</p>
+          <p class="num text-sm text-mute">{kcal(calories)} kcal · {plan ? plan.name : 'No diet plan selected'}</p>
         </div>
       </div>
 
@@ -248,7 +252,7 @@ function ProteinCard({ date, isToday, data, target, gapAlert, variant, onVariant
             <div class="mt-2 flex flex-wrap gap-2">
               {backups.map((f) => (
                 <button key={f.id} type="button" class="btn btn-sm" onClick={() => logFood(f, 1)}>
-                  Log {f.name} · {g(f.protein_g)} g
+                  Log {f.name} · {g(f.protein_g)} g{f.calories === null ? '' : ` · ${kcal(f.calories)} kcal`}
                 </button>
               ))}
             </div>
@@ -268,7 +272,10 @@ function ProteinCard({ date, isToday, data, target, gapAlert, variant, onVariant
                   <p class={cx('truncate text-sm font-medium', done ? 'text-mute line-through' : 'text-ink')}>{meal.name}</p>
                   <p class="truncate text-xs text-mute">{done ? logged.map(describeLog).join(', ') : describeItems(items, foods)}</p>
                 </div>
-                <span class="num shrink-0 text-sm text-ink">{g(done ? logged.reduce((s, l) => s + l.protein_g, 0) : proteinOf(items, foods))} g</span>
+                <span class="num shrink-0 text-right text-sm text-ink">
+                  {g(done ? logged.reduce((s, l) => s + l.protein_g, 0) : proteinOf(items, foods))} g
+                  <span class="block text-xs text-mute">{kcal(done ? sumCalories(logged) : caloriesOf(items, foods))} kcal</span>
+                </span>
                 {done ? (
                   <button type="button" class="btn btn-sm w-16" onClick={() => undoMeal(meal)}>Undo</button>
                 ) : (
@@ -286,58 +293,96 @@ function ProteinCard({ date, isToday, data, target, gapAlert, variant, onVariant
           {extras.map((l) => (
             <li key={l.id} class="flex items-center gap-3 py-2">
               <p class="min-w-0 flex-1 truncate text-sm text-ink">{describeLog(l)}</p>
-              <span class="num text-sm text-ink">{g(l.protein_g)} g</span>
+              <span class="num text-sm text-ink">{g(l.protein_g)} g{l.calories === null ? '' : ` · ${kcal(l.calories)} kcal`}</span>
               <IconButton label={`Remove ${l.food_name}`} onClick={() => removeLog(l)}>×</IconButton>
             </li>
           ))}
         </ul>
       )}
 
-      <QuickAdd foods={data.foods} onFood={(food, qty) => logFood(food, qty)} onCustom={(name, protein) => insert([{ food_id: null, food_name: name, qty: 1, protein_g: protein, meal_name: null }])} />
+      <QuickAdd
+        foods={data.foods}
+        shared={shared}
+        onFood={(food, qty) => logFood(food, qty)}
+        onCustom={(name, protein, calories) => insert([{ food_id: null, food_name: name, qty: 1, protein_g: protein, calories, meal_name: null }])}
+      />
     </Card>
   );
 }
 
-function QuickAdd({ foods, onFood, onCustom }: { foods: Food[]; onFood: (food: Food, qty: number) => void; onCustom: (name: string, protein: number) => void }) {
-  const [foodId, setFoodId] = useState('');
+type QuickAddProps = {
+  foods: Food[];
+  shared: CatalogFood[];
+  onFood: (food: PickerFood, qty: number) => void;
+  onCustom: (name: string, protein: number, calories: number | null) => void;
+};
+
+function QuickAdd({ foods, shared, onFood, onCustom }: QuickAddProps) {
+  const [mode, setMode] = useState<'closed' | 'food' | 'custom'>('closed');
+  const [food, setFood] = useState<PickerFood | null>(null);
   const [qty, setQty] = useState('1');
   const [name, setName] = useState('');
   const [protein, setProtein] = useState('');
-  const food = foods.find((f) => f.id === foodId);
+  const [calories, setCalories] = useState('');
+
+  const close = () => {
+    setMode('closed');
+    setFood(null);
+    setQty('1');
+    setName('');
+    setProtein('');
+    setCalories('');
+  };
 
   const submit = (e: Event) => {
     e.preventDefault();
-    if (foodId === CUSTOM) {
-      if (!name.trim() || !(Number(protein) >= 0) || protein === '') return;
-      onCustom(name.trim(), Number(protein));
-      setName('');
-      setProtein('');
+    if (mode === 'custom') {
+      // Calories are optional: left empty, the entry has none.
+      const kcalValue = calories === '' ? null : Number(calories);
+      if (!name.trim() || protein === '' || !(Number(protein) >= 0) || (kcalValue !== null && !(kcalValue >= 0))) return;
+      onCustom(name.trim(), Number(protein), kcalValue === null ? null : Math.round(kcalValue));
     } else if (food && Number(qty) > 0) {
       onFood(food, Number(qty));
     } else return;
-    setFoodId('');
-    setQty('1');
+    close();
   };
 
+  if (mode === 'closed') {
+    return (
+      <div class="flex flex-wrap gap-2 border-t border-hairline pt-4">
+        <button type="button" class="btn" onClick={() => setMode('food')}>Add food</button>
+        <button type="button" class="btn btn-quiet" onClick={() => setMode('custom')}>Something not in my list</button>
+      </div>
+    );
+  }
+
   return (
-    <form onSubmit={submit} class="flex flex-wrap items-end gap-2 border-t border-hairline pt-4">
-      <label class="min-w-40 flex-1">
-        <span class="label">Add something else</span>
-        <select class="input" value={foodId} onChange={(e) => setFoodId(e.currentTarget.value)}>
-          <option value="">Choose a food…</option>
-          {foods.map((f) => <option key={f.id} value={f.id}>{f.name} · {f.serving} · {g(f.protein_g)} g</option>)}
-          <option value={CUSTOM}>Something not in my list</option>
-        </select>
-      </label>
-      {foodId === CUSTOM ? (
+    <form onSubmit={submit} class="flex flex-col gap-3 border-t border-hairline pt-4">
+      {mode === 'food' ? (
         <>
-          <input class="input w-36 flex-1" aria-label="What you ate" placeholder="What you ate" value={name} onInput={(e) => setName(e.currentTarget.value)} />
-          <input class="input num w-24" type="number" inputMode="decimal" min="0" step="any" aria-label="Protein in grams" placeholder="Protein g" value={protein} onInput={(e) => setProtein(e.currentTarget.value)} />
+          <FoodPicker own={foods} shared={shared} isSelected={(f) => f.id === food?.id} onPick={setFood} empty="No matching foods. Try another word, or add something not in your list." />
+          {food && (
+            <div class="flex flex-wrap items-center gap-2">
+              <p class="min-w-0 flex-1 truncate text-sm text-ink">Servings of {food.name}</p>
+              <input class="input num w-20" type="number" inputMode="decimal" min="0" step="any" aria-label="Servings" value={qty} onInput={(e) => setQty(e.currentTarget.value)} />
+            </div>
+          )}
         </>
       ) : (
-        food && <input class="input num w-20" type="number" inputMode="decimal" min="0" step="any" aria-label="Servings" value={qty} onInput={(e) => setQty(e.currentTarget.value)} />
+        <div class="flex flex-wrap gap-2">
+          <input class="input w-36 flex-1" aria-label="What you ate" placeholder="What you ate" value={name} onInput={(e) => setName(e.currentTarget.value)} />
+          <input class="input num w-24" type="number" inputMode="decimal" min="0" step="any" aria-label="Protein in grams" placeholder="Protein g" value={protein} onInput={(e) => setProtein(e.currentTarget.value)} />
+          <input class="input num w-28" type="number" inputMode="decimal" min="0" step="1" aria-label="Calories, optional" placeholder="kcal (optional)" value={calories} onInput={(e) => setCalories(e.currentTarget.value)} />
+        </div>
       )}
-      <button type="submit" class="btn" disabled={!foodId}>Add</button>
+      <div class="flex flex-wrap justify-end gap-2">
+        <button type="button" class="btn btn-quiet" onClick={close}>Cancel</button>
+        <button type="submit" class="btn btn-primary" disabled={mode === 'food' ? !food : !name.trim() || protein === ''}>
+          {mode === 'food' && food
+            ? `Add ${g(round1(Number(qty) * food.protein_g))} g${food.calories === null ? '' : ` · ${kcal(Number(qty) * food.calories)} kcal`}`
+            : 'Add'}
+        </button>
+      </div>
     </form>
   );
 }

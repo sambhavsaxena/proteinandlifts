@@ -17,7 +17,7 @@ directly and row-level security keeps each account's rows private.
 | `src/pages/` | Public pages (`/`, legal, 404/500), auth pages, and the `/app/*` shells |
 | `src/app/` | The signed-in screens (Preact): Today, Workouts, Session, Diet, Reports, Settings |
 | `src/lib/` | Supabase client, date helpers, diet maths, photo upload, starter-plan seeding |
-| `src/data/` | Starter plans, one training programme per goal and one diet per way of eating (`starter.ts`), and the shared food list (`food-catalog.ts`) |
+| `src/data/` | Starter plans, one training programme per goal and one diet per way of eating (`starter.ts`), and the shared food list (`food-catalog.ts`, with the wider list of Indian staples in `food-catalog-more.json`) |
 | `scripts/` | `build-exercise-catalog.mjs` (exercise catalog and photos) and `build-icons.mjs` (favicon, PWA icons, social card from `scripts/brand/trainory.svg`) |
 | `public/exercises/`, `public/exercise-catalog.json` | The full exercise catalog and its photos ([free-exercise-db](https://github.com/yuhonas/free-exercise-db), public domain) |
 | `supabase/migrations/` | Database schema, RLS policies and the storage bucket |

@@ -1,7 +1,7 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import { readFileSync } from 'node:fs';
-import { FOOD_CATALOG, FOOD_CATEGORIES } from '../data/food-catalog';
+import { FOOD_CATEGORIES, SHARED_FOODS } from '../data/food-catalog';
 import { mealProtein, STARTER_DIETS, STARTER_PROGRAMS, starterExercises } from '../data/starter';
 import { WEEKDAYS } from '../lib/dates';
 
@@ -14,7 +14,7 @@ const programs = (['gain', 'lose', 'maintain'] as const).map((goal) => {
 });
 // The shared food list by category, densest sources first.
 const foodGroups = FOOD_CATEGORIES.map((category) => {
-  const foods = FOOD_CATALOG.filter((f) => f.category === category).sort((a, b) => b.protein_g - a.protein_g);
+  const foods = SHARED_FOODS.filter((f) => f.category === category).sort((a, b) => b.protein_g - a.protein_g);
   return { category, count: foods.length, examples: foods.slice(0, 4).map((f) => f.name).join(', ') };
 });
 
@@ -31,8 +31,8 @@ const RING = 2 * Math.PI * 61;
 
 const features = [
   {
-    title: 'Protein, not calories',
-    body: 'Set a daily target in grams. Your usual meals sit on the Today screen with their protein already added up, so logging breakfast is one tap.',
+    title: 'Protein first, calories alongside',
+    body: 'Set a daily target in grams. Your usual meals sit on the Today screen with their protein and calories already added up, so logging breakfast is one tap.',
   },
   {
     title: 'Workouts you can rewrite',
@@ -55,11 +55,11 @@ const faqs = [
   },
   {
     q: 'How can I complete my daily protein intake without supplements?',
-    a: `Spread protein across the day and build each meal around one dense source. Ordinary food gets most people there: eggs or paneer at breakfast, dal or chicken with roti or rice, curd, roasted chana and peanuts as snacks. Trainory's shared list has ${FOOD_CATALOG.length} protein-rich foods with protein per serving to build meals from. Mark a supplement such as whey as a backup food and the tracker suggests it only when you are 15 g or more short in the evening.`,
+    a: `Spread protein across the day and build each meal around one dense source. Ordinary food gets most people there: eggs or paneer at breakfast, dal or chicken with roti or rice, curd, roasted chana and peanuts as snacks. Trainory's shared list has ${SHARED_FOODS.length} everyday foods with protein and calories per serving to build meals from. Mark a supplement such as whey as a backup food and the tracker suggests it only when you are 15 g or more short in the evening.`,
   },
   {
     q: 'Is there a protein tracker without calorie counting?',
-    a: 'Yes. Trainory tracks grams of protein only. There are no calorie budgets, macro pie charts or barcode scanners, which keeps logging to a few taps a day.',
+    a: 'Yes. Trainory is built around grams of protein. Foods carry their calories too, so you can see the day’s total, but there are no calorie budgets, macro pie charts or barcode scanners, which keeps logging to a few taps a day.',
   },
   {
     q: 'Does it work for vegans and vegetarians?',
@@ -103,7 +103,7 @@ const jsonLd = {
 
   <section class="mx-auto grid w-full max-w-5xl items-center gap-10 px-4 pt-14 pb-16 sm:pt-20 md:grid-cols-[1.1fr_0.9fr]">
     <div>
-      <p class="eyebrow mb-4">Free · protein only · no calorie counting</p>
+      <p class="eyebrow mb-4">Free · protein first · no calorie budgets</p>
       <h1 class="text-4xl leading-[1.05] tracking-[-0.04em] sm:text-5xl">The protein tracker and workout planner that fits on one screen</h1>
       <p class="mt-5 max-w-xl text-lg leading-7">Trainory is a free protein tracker for people who lift. Open it, see today's workout and how many grams you still need, log both in a few taps, and close it again.</p>
       <div class="mt-8 flex flex-wrap gap-3">
@@ -162,8 +162,8 @@ const jsonLd = {
   </section>
 
   <section class="mx-auto w-full max-w-3xl px-4 py-16 text-[17px] leading-8">
-    <h2 class="text-3xl tracking-tight">A protein tracker without the calorie maths</h2>
-    <p class="mt-4">Most nutrition apps ask you to weigh, scan and budget everything you eat. That is a lot of work if the only number you care about is protein. Here you keep a short list of the foods you actually eat, each with its protein per serving, and arrange them into the meals of a normal day. Logging a meal is a single tap, and anything outside the plan takes two fields: what it was and how many grams.</p>
+    <h2 class="text-3xl tracking-tight">A protein tracker without the calorie budgets</h2>
+    <p class="mt-4">Most nutrition apps ask you to weigh, scan and budget everything you eat. That is a lot of work if the only number you care about is protein. Here you keep a short list of the foods you actually eat, each with its protein and calories per serving, and arrange them into the meals of a normal day. Logging a meal is a single tap, and anything outside the plan takes two fields: what it was and how many grams, with calories if you know them.</p>
     <p class="mt-4">The daily protein intake tracker also knows that not every day is the same. A plan can have variants, such as an egg day and a no-egg day, and the meals change with the variant you pick. If the evening arrives and you are still well short, it tells you by how much and offers the backup food you chose, such as a scoop of whey.</p>
 
     <h2 class="mt-12 text-3xl tracking-tight">A workout planner built around your week</h2>
@@ -178,7 +178,7 @@ const jsonLd = {
     <div class="mx-auto w-full max-w-5xl px-4 py-16">
       <p class="eyebrow mb-3">Included when you sign up</p>
       <h2 class="text-3xl tracking-tight">A starting plan built from four answers</h2>
-      <p class="mt-3 max-w-2xl leading-7">Tell the app your weight, height, target weight and how you eat. It picks a training week for your goal, four everyday meals for your diet from a shared list of protein-rich foods, and suggests a protein target. It is ordinary data in your account, so rename it, rearrange it or delete it.</p>
+      <p class="mt-3 max-w-2xl leading-7">Tell the app your weight, height, target weight and how you eat. It picks a training week for your goal, four everyday meals for your diet from a shared list of everyday foods, and suggests a protein target. It is ordinary data in your account, so rename it, rearrange it or delete it.</p>
 
       <ul class="mt-8 grid grid-cols-2 gap-3 md:grid-cols-4" data-zoom-group>
         {gallery.map((e) => (
@@ -207,7 +207,7 @@ const jsonLd = {
           </ul>
         </div>
         <div>
-          <h3 class="text-lg tracking-tight">Shared food list, {FOOD_CATALOG.length} foods</h3>
+          <h3 class="text-lg tracking-tight">Shared food list, {SHARED_FOODS.length} foods</h3>
           <ul class="mt-3 divide-y divide-hairline border-y border-hairline text-sm">
             {foodGroups.map((group) => (
               <li class="flex items-baseline justify-between gap-4 py-3">
@@ -219,7 +219,7 @@ const jsonLd = {
               </li>
             ))}
           </ul>
-          <p class="mt-3 text-xs text-mute">Protein values are standard approximations per serving. Edit them to match what you buy.</p>
+          <p class="mt-3 text-xs text-mute">Protein and calorie values are standard approximations per serving. Edit them to match what you buy.</p>
         </div>
       </div>
     </div>

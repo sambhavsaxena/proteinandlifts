@@ -5,7 +5,7 @@ import { must, supabase } from '../lib/supabase';
 import type { IntakeLog, ScheduleRow, SetLog, WeightLog, WorkoutSession } from '../lib/types';
 import { BarChart, Heatmap, LineChart, slopePerDay, type DayValue } from './charts';
 import { Gate, type Ctx } from './Gate';
-import { Card, cx, Empty, ErrorNote, g, Loading, Page, Segmented } from './ui';
+import { Card, cx, Empty, ErrorNote, g, kcal, Loading, Page, Segmented } from './ui';
 
 const RANGES = [
   { value: '7', label: '7 days' },
@@ -78,6 +78,12 @@ function ReportsScreen({ profile }: Ctx) {
     for (const l of data.intake) byDay.set(l.logged_on, (byDay.get(l.logged_on) ?? 0) + l.protein_g);
     const protein: DayValue[] = days.map((date) => ({ date, value: round1(byDay.get(date) ?? 0) }));
     const logged = protein.filter((d) => d.value > 0);
+    const kcalByDay = new Map<string, number>();
+    for (const l of data.intake) kcalByDay.set(l.logged_on, (kcalByDay.get(l.logged_on) ?? 0) + Number(l.calories ?? 0));
+    const calories: DayValue[] = days.map((date) => ({ date, value: Math.round(kcalByDay.get(date) ?? 0) }));
+    // Over the days that have calories, since older entries and some foods have none.
+    const withCalories = calories.filter((d) => d.value > 0);
+    const averageCalories = withCalories.length ? Math.round(withCalories.reduce((s, d) => s + d.value, 0) / withCalories.length) : null;
     const average = logged.length ? round1(logged.reduce((s, d) => s + d.value, 0) / logged.length) : null;
     const onTarget = logged.filter((d) => d.value >= target).length;
 
@@ -109,7 +115,7 @@ function ReportsScreen({ profile }: Ctx) {
     const weights: DayValue[] = data.weights.map((w) => ({ date: w.logged_on, value: w.kg }));
     const slope = slopePerDay(weights);
 
-    return { days, target, protein, logged, average, onTarget, planned, trainedOn, rangeSets, sessionStats, bests, exercises, weights, weeklyGain: slope === null ? null : slope * 7 };
+    return { days, target, protein, calories, averageCalories, logged, average, onTarget, planned, trainedOn, rangeSets, sessionStats, bests, exercises, weights, weeklyGain: slope === null ? null : slope * 7 };
   }, [data]);
 
   if (!view || !data) {
@@ -155,6 +161,17 @@ function ReportsScreen({ profile }: Ctx) {
 
       <Card title="Protein per day">
         {view.logged.length ? <BarChart data={view.protein} target={view.target} unit="g" /> : <Empty>Log a meal on the Today screen and it shows up here.</Empty>}
+      </Card>
+
+      <Card title="Calories per day">
+        {view.averageCalories !== null ? (
+          <>
+            <p class="num mb-2 text-sm text-mute">{kcal(view.averageCalories)} kcal on average, over the days with calories logged</p>
+            <BarChart data={view.calories} unit="kcal" />
+          </>
+        ) : (
+          <Empty>Foods with calories add them when you log them on the Today screen.</Empty>
+        )}
       </Card>
 
       <Card title="Consistency">
@@ -251,7 +268,7 @@ function ReportsScreen({ profile }: Ctx) {
       <Card title="Export">
         <p class="mb-3 text-sm">Download the logs behind these charts as CSV, for the selected range.</p>
         <div class="flex flex-wrap gap-2">
-          <button type="button" class="btn btn-sm" onClick={() => downloadCsv('protein-log', ['date', 'meal', 'food', 'servings', 'protein_g'], data.intake.map((l) => [l.logged_on, l.meal_name, l.food_name, l.qty, l.protein_g]))}>Protein log</button>
+          <button type="button" class="btn btn-sm" onClick={() => downloadCsv('food-log', ['date', 'meal', 'food', 'servings', 'protein_g', 'calories'], data.intake.map((l) => [l.logged_on, l.meal_name, l.food_name, l.qty, l.protein_g, l.calories]))}>Food log</button>
           <button type="button" class="btn btn-sm" onClick={() => downloadCsv('workout-log', ['date', 'exercise', 'set', 'weight_kg', 'reps'], view.rangeSets.map((s) => [s.performed_on, s.exercise_name, s.set_no, s.weight_kg, s.reps]))}>Workout log</button>
           <button type="button" class="btn btn-sm" onClick={() => downloadCsv('weight-log', ['date', 'kg'], data.weights.map((w) => [w.logged_on, w.kg]))}>Weight log</button>
         </div>

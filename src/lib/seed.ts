@@ -72,7 +72,7 @@ export async function addStarterDiet(db: SupabaseClient, preference: DietPrefere
       await db.from('foods').insert(
         missing.map((name) => {
           const food = catalogFood(name);
-          return { id: foodIds.get(name), name: food.name, serving: food.serving, protein_g: food.protein_g };
+          return { id: foodIds.get(name), name: food.name, serving: food.serving, protein_g: food.protein_g, calories: food.calories };
         }),
       ),
     );

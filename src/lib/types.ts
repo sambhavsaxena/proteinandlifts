@@ -89,6 +89,8 @@ export type Food = {
   name: string;
   serving: string;
   protein_g: number;
+  /** kcal per serving; null when not known. */
+  calories: number | null;
   is_backup: boolean;
 };
 
@@ -123,6 +125,8 @@ export type IntakeLog = {
   food_name: string;
   qty: number;
   protein_g: number;
+  /** kcal for the entry, frozen at log time like protein; null when not known. */
+  calories: number | null;
   meal_name: string | null;
 };
 

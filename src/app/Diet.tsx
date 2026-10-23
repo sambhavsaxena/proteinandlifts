@@ -1,17 +1,19 @@
 import { useEffect, useMemo, useState } from 'preact/hooks';
-import { catalogFoodsFor, FOOD_CATEGORIES, type CatalogFood } from '../data/food-catalog';
+import { catalogFoodsFor, type CatalogFood } from '../data/food-catalog';
 import { DIET_OPTIONS } from '../data/starter';
-import { addCatalogFood, fetchFoods, fetchPlans, itemsFor, proteinOf } from '../lib/diet';
+import { addCatalogFood, caloriesOf, fetchFoods, fetchPlans, FOOD_COLUMNS, itemsFor, proteinOf } from '../lib/diet';
+import type { PickerFood } from '../lib/food-search';
 import { must, supabase } from '../lib/supabase';
 import type { DietPlan, Food, Meal, MealItem } from '../lib/types';
 import { Gate, type Ctx } from './Gate';
-import { Card, ConfirmButton, cx, Empty, ErrorNote, Field, g, IconButton, Loading, NumberInput, Page, Segmented } from './ui';
+import { FoodPicker } from './FoodPicker';
+import { Card, ConfirmButton, cx, Empty, ErrorNote, Field, g, IconButton, kcal, Loading, NumberInput, Page, Segmented } from './ui';
 
 type Tab = 'Plan' | 'Foods';
 const TABS: readonly Tab[] = ['Plan', 'Foods'];
 const EVERY_DAY = '';
-/** Select values for shared-list foods: the prefix plus the food's name. */
-const SHARED = 'shared:';
+/** Your foods listed before "Show all". */
+const FIRST_FOODS = 10;
 
 function DietScreen({ profile, saveProfile }: Ctx) {
   const [tab, setTab] = useState<Tab>(location.hash === '#foods' ? 'Foods' : 'Plan');
@@ -193,12 +195,14 @@ function PlanEditor({ plan, setPlan, foods, shared, adopt, target, run, onDelete
         </div>
         <dl class="mt-4 flex flex-wrap gap-x-8 gap-y-2 border-t border-hairline pt-4">
           {columns.map((variant) => {
-            const total = proteinOf(plan.meals.flatMap((m) => itemsFor(m, variant)), foodMap);
+            const dayItems = plan.meals.flatMap((m) => itemsFor(m, variant));
+            const total = proteinOf(dayItems, foodMap);
             return (
               <div key={variant ?? 'all'}>
                 <dt class="text-xs text-mute">{variant ?? 'Daily total'}</dt>
                 <dd class="num text-lg font-semibold tracking-tight text-ink">
-                  {g(total)} g <span class={cx('text-sm font-normal', total >= target ? 'text-good' : 'text-warn')}>{total >= target ? `target ${g(target)} g met` : `${g(target - total)} g under target`}</span>
+                  {g(total)} g <span class="text-sm font-normal text-mute">· {kcal(caloriesOf(dayItems, foodMap))} kcal</span>{' '}
+                  <span class={cx('text-sm font-normal', total >= target ? 'text-good' : 'text-warn')}>{total >= target ? `target ${g(target)} g met` : `${g(target - total)} g under target`}</span>
                 </dd>
               </div>
             );
@@ -251,10 +255,8 @@ type MealProps = {
   onNeedFood: () => void;
 };
 
-const NEW_FOOD = 'new';
-
 function MealCard({ meal, setMeal, variants, columns, foods, shared, adopt, foodMap, run, onMove, canMoveUp, canMoveDown, onDelete, onNeedFood }: MealProps) {
-  const [adding, setAdding] = useState('');
+  const [adding, setAdding] = useState(false);
 
   const rename = (name: string) =>
     run(async () => {
@@ -274,17 +276,14 @@ function MealCard({ meal, setMeal, variants, columns, foods, shared, adopt, food
       setMeal({ ...meal, meal_items: meal.meal_items.filter((i) => i.id !== item.id) });
     });
 
-  const addItem = (value: string) => {
-    if (value === NEW_FOOD) return onNeedFood();
+  const addItem = (picked: PickerFood) =>
     run(async () => {
-      const fromShared = value.startsWith(SHARED) ? shared.find((f) => f.name === value.slice(SHARED.length)) : undefined;
-      const foodId = fromShared ? (await adopt(fromShared)).id : value;
+      const foodId = picked.shared ? (await adopt(picked.shared)).id : picked.id;
       const position = meal.meal_items.length ? Math.max(...meal.meal_items.map((i) => i.position)) + 1 : 0;
       const created = must(await supabase.from('meal_items').insert({ meal_id: meal.id, food_id: foodId, qty: 1, position }).select('id,meal_id,food_id,qty,variant,position').single());
       setMeal({ ...meal, meal_items: [...meal.meal_items, created as MealItem] });
-      setAdding('');
+      setAdding(false);
     });
-  };
 
   return (
     <Card>
@@ -301,7 +300,9 @@ function MealCard({ meal, setMeal, variants, columns, foods, shared, adopt, food
             <li key={item.id} class="flex flex-wrap items-center gap-2 py-2.5">
               <div class="w-full sm:w-auto sm:min-w-32 sm:flex-1">
                 <p class="truncate text-sm font-medium text-ink">{food?.name ?? 'Deleted food'}</p>
-                <p class="num truncate text-xs text-mute">{food ? `${food.serving} · ${g(food.protein_g)} g each` : ''}</p>
+                <p class="num truncate text-xs text-mute">
+                  {food ? `${food.serving} · ${g(food.protein_g)} g${food.calories === null ? '' : ` · ${kcal(food.calories)} kcal`} each` : ''}
+                </p>
               </div>
               <NumberInput label="Servings" class="w-16" value={item.qty} onCommit={(qty) => patchItem(item, { qty })} />
               {variants.length > 0 && (
@@ -310,30 +311,30 @@ function MealCard({ meal, setMeal, variants, columns, foods, shared, adopt, food
                   {variants.map((v) => <option key={v} value={v}>{v}</option>)}
                 </select>
               )}
-              <span class="num w-14 text-right text-sm text-ink">{g(item.qty * (food?.protein_g ?? 0))} g</span>
+              <span class="num w-20 text-right text-sm text-ink">
+                {g(item.qty * (food?.protein_g ?? 0))} g
+                {food?.calories !== null && food?.calories !== undefined && <span class="block text-xs text-mute">{kcal(item.qty * food.calories)} kcal</span>}
+              </span>
               <IconButton label={`Remove ${food?.name ?? 'item'}`} onClick={() => removeItem(item)}>×</IconButton>
             </li>
           );
         })}
       </ul>
 
+      {adding && (
+        <div class="mt-2 border-t border-hairline pt-3">
+          <FoodPicker own={foods} shared={shared} onPick={addItem} empty="No matching foods. Create it as your own food instead." />
+          <div class="mt-2 flex justify-end gap-2">
+            <button type="button" class="btn btn-sm btn-quiet" onClick={onNeedFood}>Create your own food</button>
+            <button type="button" class="btn btn-sm" onClick={() => setAdding(false)}>Done</button>
+          </div>
+        </div>
+      )}
+
       <div class="mt-2 flex flex-wrap items-center justify-between gap-3 border-t border-hairline pt-3">
-        <select class="input w-auto min-w-44 flex-1 sm:flex-none" aria-label="Food to add" value={adding} onChange={(e) => addItem(e.currentTarget.value)}>
-          <option value="">Add a food…</option>
-          {foods.length > 0 && (
-            <optgroup label="Your foods">
-              {foods.map((f) => <option key={f.id} value={f.id}>{f.name} · {g(f.protein_g)} g</option>)}
-            </optgroup>
-          )}
-          {shared.length > 0 && (
-            <optgroup label="Shared list">
-              {shared.map((f) => <option key={f.name} value={SHARED + f.name}>{f.name} · {f.serving} · {g(f.protein_g)} g</option>)}
-            </optgroup>
-          )}
-          <option value={NEW_FOOD}>Create your own food…</option>
-        </select>
+        {!adding && <button type="button" class="btn btn-sm" onClick={() => setAdding(true)}>Add a food</button>}
         <p class="num text-sm text-ink">
-          {columns.map((v) => `${v ? `${v}: ` : ''}${g(proteinOf(itemsFor(meal, v), foodMap))} g`).join('  ·  ')}
+          {columns.map((v) => `${v ? `${v}: ` : ''}${g(proteinOf(itemsFor(meal, v), foodMap))} g, ${kcal(caloriesOf(itemsFor(meal, v), foodMap))} kcal`).join('  ·  ')}
         </p>
         <ConfirmButton label="Delete meal" onConfirm={onDelete} />
       </div>
@@ -347,17 +348,26 @@ function FoodsTab({ foods, setFoods, shared, adopt, dietLabel, run }: FoodsProps
   const [name, setName] = useState('');
   const [serving, setServing] = useState('');
   const [protein, setProtein] = useState('');
+  const [calories, setCalories] = useState('');
+  const [all, setAll] = useState(false);
 
   const add = (e: Event) => {
     e.preventDefault();
     run(async () => {
+      // Calories are optional: left empty, the food has none.
+      const kcalValue = calories === '' ? null : Math.round(Number(calories)) || 0;
       const created = must(
-        await supabase.from('foods').insert({ name: name.trim(), serving: serving.trim() || '1 serving', protein_g: Number(protein) || 0 }).select('id,name,serving,protein_g,is_backup').single(),
+        await supabase
+          .from('foods')
+          .insert({ name: name.trim(), serving: serving.trim() || '1 serving', protein_g: Number(protein) || 0, calories: kcalValue })
+          .select(FOOD_COLUMNS)
+          .single(),
       ) as Food;
       setFoods([...foods, created].sort((a, b) => a.name.localeCompare(b.name)));
       setName('');
       setServing('');
       setProtein('');
+      setCalories('');
     });
   };
 
@@ -373,50 +383,54 @@ function FoodsTab({ foods, setFoods, shared, adopt, dietLabel, run }: FoodsProps
       setFoods(foods.filter((f) => f.id !== food.id));
     });
 
-  const addShared = (name: string) => {
-    const food = shared.find((f) => f.name === name);
-    if (food) run(async () => void (await adopt(food)));
+  const addShared = (picked: PickerFood) => {
+    if (picked.shared) run(async () => void (await adopt(picked.shared!)));
   };
 
   return (
     <>
       <Card title="Add from the shared list">
-        <p class="mb-3 text-sm">Protein-rich foods common in India and elsewhere{dietLabel ? `, filtered for a ${dietLabel.toLowerCase()} diet` : ''}. Adding one copies it into your foods, where you can change it.</p>
-        <select class="input" aria-label="Food from the shared list" value="" disabled={!shared.length} onChange={(e) => e.currentTarget.value && addShared(e.currentTarget.value)}>
-          <option value="">{shared.length ? `Choose one of ${shared.length} foods…` : 'Every shared food is already in your list'}</option>
-          {FOOD_CATEGORIES.map((category) => {
-            const inCategory = shared.filter((f) => f.category === category);
-            return inCategory.length ? (
-              <optgroup key={category} label={category}>
-                {inCategory.map((f) => <option key={f.name} value={f.name}>{f.name} · {f.serving} · {g(f.protein_g)} g</option>)}
-              </optgroup>
-            ) : null;
-          })}
-        </select>
+        <p class="mb-3 text-sm">
+          Everyday foods common in India and elsewhere{dietLabel ? `, filtered for a ${dietLabel.toLowerCase()} diet` : ''}. Adding one copies it into your foods, where you can change its numbers for
+          yourself; the shared list stays as it is.
+        </p>
+        <FoodPicker own={[]} shared={shared} onPick={addShared} empty={shared.length ? 'No matching foods.' : 'Every shared food is already in your list.'} />
       </Card>
 
       <Card title="Add your own food">
         <p class="mb-3 text-sm">Not in the shared list? Foods you add here are yours alone.</p>
-        <form onSubmit={add} class="grid grid-cols-2 gap-2 sm:grid-cols-[1fr_10rem_7rem_auto]">
+        <form onSubmit={add} class="grid grid-cols-2 gap-2 sm:grid-cols-[1fr_9rem_6rem_7rem_auto]">
           <input class="input col-span-2 sm:col-span-1" aria-label="Food name" placeholder="Food, e.g. Greek yoghurt" required value={name} onInput={(e) => setName(e.currentTarget.value)} />
           <input class="input" aria-label="Serving size" placeholder="Serving, e.g. 100 g" value={serving} onInput={(e) => setServing(e.currentTarget.value)} />
           <input class="input num" type="number" inputMode="decimal" min="0" step="any" aria-label="Protein per serving in grams" placeholder="Protein g" required value={protein} onInput={(e) => setProtein(e.currentTarget.value)} />
-          <button type="submit" class="btn btn-primary col-span-2 sm:col-span-1">Add food</button>
+          <input class="input num" type="number" inputMode="decimal" min="0" step="1" aria-label="Calories per serving, optional" placeholder="kcal (optional)" value={calories} onInput={(e) => setCalories(e.currentTarget.value)} />
+          <button type="submit" class="btn btn-primary">Add food</button>
         </form>
       </Card>
 
       <Card title={`Your foods (${foods.length})`}>
         {foods.length === 0 && <Empty>Nothing here yet. Pick foods from the shared list or add your own, with protein per serving.</Empty>}
         <ul class="divide-y divide-hairline">
-          {foods.map((food) => (
-            <li key={food.id} class="grid grid-cols-[1fr_5.5rem_2rem] items-center gap-2 py-2.5 sm:grid-cols-[1fr_10rem_5.5rem_auto_2rem]">
+          {(all ? foods : foods.slice(0, FIRST_FOODS)).map((food) => (
+            <li key={food.id} class="grid grid-cols-[1fr_5.5rem_5.5rem_2rem] items-center gap-2 py-2.5 sm:grid-cols-[1fr_9rem_5.5rem_5.5rem_auto_2rem]">
               <input class="input" aria-label="Food name" value={food.name} onChange={(e) => e.currentTarget.value.trim() && patch(food, { name: e.currentTarget.value.trim() })} />
               <input class="input order-4 sm:order-none" aria-label={`Serving size of ${food.name}`} value={food.serving} onChange={(e) => patch(food, { serving: e.currentTarget.value.trim() || '1 serving' })} />
               <div class="relative">
                 <NumberInput label={`Protein per serving of ${food.name}`} class="pr-6" value={food.protein_g} onCommit={(protein_g) => patch(food, { protein_g })} />
                 <span class="pointer-events-none absolute inset-y-0 right-2.5 flex items-center text-xs text-mute">g</span>
               </div>
-              <label class="order-5 col-span-2 flex items-center gap-2 text-xs text-body sm:order-none sm:col-span-1" title="Offered as a one-tap top-up when you end the day short">
+              <div class="relative">
+                <NumberInput
+                  label={`Calories per serving of ${food.name}, optional`}
+                  class="pr-9"
+                  step={1}
+                  value={food.calories}
+                  onCommit={(n) => patch(food, { calories: Math.round(n) })}
+                  onClear={() => patch(food, { calories: null })}
+                />
+                <span class="pointer-events-none absolute inset-y-0 right-2.5 flex items-center text-xs text-mute">kcal</span>
+              </div>
+              <label class="order-5 col-span-3 flex items-center gap-2 text-xs text-body sm:order-none sm:col-span-1" title="Offered as a one-tap top-up when you end the day short">
                 <input type="checkbox" checked={food.is_backup} onChange={(e) => patch(food, { is_backup: e.currentTarget.checked })} />
                 Backup
               </label>
@@ -424,6 +438,11 @@ function FoodsTab({ foods, setFoods, shared, adopt, dietLabel, run }: FoodsProps
             </li>
           ))}
         </ul>
+        {foods.length > FIRST_FOODS && (
+          <button type="button" class="btn btn-sm btn-quiet mt-2" onClick={() => setAll(!all)}>
+            {all ? 'Show fewer' : `Show all ${foods.length} foods`}
+          </button>
+        )}
       </Card>
     </>
   );

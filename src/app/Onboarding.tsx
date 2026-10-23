@@ -1,7 +1,8 @@
 import { useState } from 'preact/hooks';
 import { DIET_OPTIONS, DIET_ORDER, dietTotal, goalFor, mealProtein, STARTER_DIETS, STARTER_PROGRAMS, suggestedProtein, type DietPreference } from '../data/starter';
 import { WEEKDAYS_LONG } from '../lib/dates';
-import { cx, ErrorNote, Field, g } from './ui';
+import { starterMealCalories as mealCalories } from '../lib/diet';
+import { cx, ErrorNote, Field, g, kcal } from './ui';
 
 export type Answers = {
   weightKg: number;
@@ -151,11 +152,11 @@ function Review({ weightKg, targetKg, diet, protein, suggested, onProtein }: Rev
               <span class="min-w-0">
                 <span class="text-ink">{m.name}</span> <span class="text-mute">· {m.items.map(([food]) => food).join(', ')}</span>
               </span>
-              <span class="num shrink-0">{g(mealProtein(m))} g</span>
+              <span class="num shrink-0">{g(mealProtein(m))} g · {kcal(mealCalories(m))} kcal</span>
             </li>
           ))}
         </ul>
-        <p class="num mt-3 text-sm text-ink">Daily total: {g(dietTotal(plan))} g</p>
+        <p class="num mt-3 text-sm text-ink">Daily total: {g(dietTotal(plan))} g · {kcal(plan.meals.reduce((sum, m) => sum + mealCalories(m), 0))} kcal</p>
       </section>
 
       <section class="card">

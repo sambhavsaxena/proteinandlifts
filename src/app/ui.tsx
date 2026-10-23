@@ -6,6 +6,9 @@ export const cx = (...parts: (string | false | null | undefined)[]) => parts.fil
 /** Grams with at most one decimal: 124.5, 120, 8. */
 export const g = (n: number) => String(Math.round(n * 10) / 10);
 
+/** Whole kcal with thousands separators: "1,240". */
+export const kcal = (n: number) => Math.round(n).toLocaleString('en');
+
 export function Page({ title, eyebrow, action, children }: { title: string; eyebrow?: string; action?: ComponentChildren; children: ComponentChildren }) {
   return (
     <div class="mx-auto flex w-full max-w-3xl flex-col gap-4 px-4 py-6 sm:py-8">
@@ -158,8 +161,26 @@ export function useWidth<T extends HTMLElement>() {
   return [ref, width] as const;
 }
 
-/** Number input that reports a parsed value on commit and ignores junk. */
-export function NumberInput({ value, onCommit, min = 0, step = 'any', class: className, label, placeholder }: { value: number | null; onCommit: (n: number) => void; min?: number; step?: number | 'any'; class?: string; label: string; placeholder?: string }) {
+/** Number input that reports a parsed value on commit and ignores junk. With `onClear`, emptying it is allowed too. */
+export function NumberInput({
+  value,
+  onCommit,
+  onClear,
+  min = 0,
+  step = 'any',
+  class: className,
+  label,
+  placeholder,
+}: {
+  value: number | null;
+  onCommit: (n: number) => void;
+  onClear?: () => void;
+  min?: number;
+  step?: number | 'any';
+  class?: string;
+  label: string;
+  placeholder?: string;
+}) {
   return (
     <input
       type="number"
@@ -172,7 +193,8 @@ export function NumberInput({ value, onCommit, min = 0, step = 'any', class: cla
       value={value ?? ''}
       onChange={(e) => {
         const n = Number(e.currentTarget.value);
-        if (e.currentTarget.value !== '' && Number.isFinite(n) && n >= min) onCommit(n);
+        if (e.currentTarget.value === '' && onClear) onClear();
+        else if (e.currentTarget.value !== '' && Number.isFinite(n) && n >= min) onCommit(n);
         else e.currentTarget.value = value === null ? '' : String(value);
       }}
     />
