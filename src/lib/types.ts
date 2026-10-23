@@ -1,4 +1,19 @@
-import type { DietPreference, Goal } from '../data/starter';
+import type { DietPreference, Goal } from './starter';
+
+// Onboarding survey answers (the profile_survey migration's check constraints).
+export type AgeRange = 'under_18' | '18_24' | '25_34' | '35_44' | '45_54' | '55_plus';
+export type TrainingExperience = 'new' | 'under_1y' | '1_3y' | 'over_3y';
+export type HeardFrom = 'social_media' | 'friend' | 'search' | 'app_store' | 'gym' | 'youtube' | 'ad' | 'other';
+export type Aim =
+  | 'stay_fit'
+  | 'track_diet'
+  | 'maintain_weight'
+  | 'build_muscle'
+  | 'lose_fat'
+  | 'get_stronger'
+  | 'more_protein'
+  | 'build_habit'
+  | 'other';
 
 export type Profile = {
   user_id: string;
@@ -13,6 +28,10 @@ export type Profile = {
   target_weight_kg: number | null;
   diet_preference: DietPreference | null;
   goal: Goal | null;
+  age_range: AgeRange | null;
+  training_experience: TrainingExperience | null;
+  heard_from: HeardFrom | null;
+  aims: Aim[] | null;
   seeded_at: string | null;
   onboarded_at: string | null;
   created_at: string;
