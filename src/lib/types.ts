@@ -150,3 +150,6 @@ export type IntakeLog = {
 };
 
 export type WeightLog = { logged_on: string; kg: number };
+
+/** One glass (or other amount) of water; `source` says whether it came from the app or its home-screen widget. */
+export type WaterLog = { id: string; logged_on: string; ml: number; source: 'app' | 'widget' };

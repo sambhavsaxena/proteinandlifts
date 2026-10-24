@@ -6,7 +6,7 @@ import { Gate, type Ctx } from './Gate';
 import { Card, ConfirmButton, ErrorNote, Field, NumberInput, Page } from './ui';
 
 // Children before parents, so deletes never trip over a foreign key.
-const TABLES = ['set_logs', 'workout_sessions', 'schedule', 'workout_exercises', 'workouts', 'exercise_media', 'exercises', 'intake_logs', 'meal_items', 'meals', 'diet_plans', 'foods', 'weight_logs'] as const;
+const TABLES = ['set_logs', 'workout_sessions', 'schedule', 'workout_exercises', 'workouts', 'exercise_media', 'exercises', 'intake_logs', 'meal_items', 'meals', 'diet_plans', 'foods', 'weight_logs', 'water_logs'] as const;
 
 function SettingsScreen({ userId, email, profile, saveProfile }: Ctx) {
   const [error, setError] = useState<string | null>(null);
